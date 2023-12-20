@@ -1,0 +1,68 @@
+[project]
+name = "pythonlib-util"
+version = "0.0.1"
+description = "Moya Python Utils"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["dependencies", "optional-dependencies"]
+authors = [
+    { name = "Mark Zealey", email = "mark.zealey@moya.app" }
+]
+maintainers = [
+    { name = "Mark Zealey", email = "mark.zealey@moya.app" }
+]
+
+[tool.black]
+line-length = 119
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.flake8]
+max-line-length = 160
+max-complexity = 10
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+combine_as_imports = true
+
+[tool.mypy]
+mypy_path = "stubs"
+plugins = [
+    "pydantic.mypy",
+]
+python_version = 3.11
+ignore_missing_imports = true
+disallow_any_generics = false  # Use List[int] instead of List or list
+namespace_packages = true      # For OpenTelemetry to work
+disallow_untyped_defs = true   # All functions should have type annotations
+warn_redundant_casts = true    # Casting a variable to its own type is disallowed
+strict_equality = true         # Error if both sides of a comparison are unequal
+strict_optional = false        # Treat `None` as a legal value for every type.
+disallow_untyped_calls = false # Don't allow calling untyped functions from typed ones
+warn_return_any = true         # Don't allow returning Any from a typed function
+disallow_any_unimported = true # Show warning when missing type hints cause an imported object to be Any
+warn_unreachable = true        # Warn on unreachable code
+enable_error_code = "redundant-expr" # Warn on redundant expressions
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.poe.tasks]
+test = "pytest . --cov=src --cov-report=term"
+"lint:flake8" = "flake8 src/ tests/"
+"lint:black" = "black --check --diff src/ tests/"
+"lint:mypy" = "mypy src/ tests/"
+lint = ["lint:flake8", "lint:black", "lint:mypy"]
+"fix:black" = "black src/ tests/"
+"fix:isort" = "isort src/ tests/"
+fix = ["fix:black", "fix:isort"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "--strict-markers",
+]
+asyncio_mode = "auto"
+pythonpath = [ "src" ]
