@@ -1,6 +1,6 @@
 [project]
 name = "pythonlib-util"
-version = "0.0.1"
+version = "0.0.2"
 description = "Moya Python Utils"
 readme = "README.md"
 requires-python = ">=3.10"
