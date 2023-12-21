@@ -3,7 +3,7 @@ from setuptools import setup, find_namespace_packages
 setup(
     name="moya-pythonlib-util",
     packages=find_namespace_packages(where="src"),
-    version="0.0.1",
+    version="0.1.0",
     package_dir={"": "src"},
     package_data={
         "moya.util": ["py.typed"],
