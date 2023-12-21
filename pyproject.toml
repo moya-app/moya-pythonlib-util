@@ -1,5 +1,5 @@
 [project]
-name = "pythonlib-util"
+name = "moya-pythonlib-util"
 version = "0.1.0"
 description = "Moya Python Utils"
 readme = "README.md"
