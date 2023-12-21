@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 setup(
     name="moya-pythonlib-util",
-    packages=['moya.service', 'moya.util'],
-    version="0.0.2",
+    packages=find_namespace_packages(where="src"),
+    version="0.0.1",
     package_dir={"": "src"},
     package_data={
         "moya.util": ["py.typed"],
