@@ -10,12 +10,12 @@ See individual module documentation for usage.
 
 ## TODOs
 
-- [ ] Business API → number lookup with caching
-- [ ] standard root api routing for version call
-- [ ] background task error logging stuff
+- [ ] Business API → number lookup with caching + fastapi Depends() fn - see weather api for an example
+- [ ] standard fastapi root router for version call
+- [ ] add tests for src/moya/service/redis.py
+- [ ] add tests for src/moya/util/background.py
 - [ ] sentry auto-config plugin
 - [ ] inbound gzip handler
-- [ ] async redis testsuite
 - [ ] rapidpro start flow?
 
 # Development
