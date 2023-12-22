@@ -12,7 +12,6 @@ See individual module documentation for usage.
 
 - [ ] Business API → number lookup with caching + fastapi Depends() fn - see weather api for an example
 - [ ] standard fastapi root router for version call
-- [ ] add tests for src/moya/service/redis.py
 - [ ] add tests for src/moya/util/background.py
 - [ ] sentry auto-config plugin
 - [ ] inbound gzip handler
