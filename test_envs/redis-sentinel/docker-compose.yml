@@ -16,5 +16,6 @@ services:
     environment:
       - REDIS_MASTER_HOST=redis
       - REDIS_MASTER_PASSWORD=testpassword
+      - REDIS_SENTINEL_PASSWORD=testpassword
     networks:
       - overlay

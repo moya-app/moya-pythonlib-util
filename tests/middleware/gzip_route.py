@@ -1,6 +1,6 @@
-import typing as t
 import gzip
 import json
+import typing as t
 import zlib
 
 import pytest

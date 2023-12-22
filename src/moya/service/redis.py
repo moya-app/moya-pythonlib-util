@@ -29,6 +29,7 @@ class RedisSettings(MoyaSettings):
 
     redis_sentinel_hosts: t.Optional[tuple[tuple[str, int], ...]] = None
     redis_sentinel_service: str = "mymaster"
+    redis_sentinel_password: t.Optional[str] = None  # if None then redis_password is used
 
     # By default, redis will hang forever if the connection connects but
     # cannot send/receive data. Ensure it blows up rather than hangs.
@@ -80,7 +81,14 @@ def _standard_connection_kwargs(settings: RedisSettings) -> dict[str, t.Any]:
 @cache
 def sentinel(settings: RedisSettings) -> aioredis.sentinel.Sentinel:
     "Create a redis sentinel client"
-    return aioredis.sentinel.Sentinel(sentinels=settings.redis_sentinel_hosts, **_standard_connection_kwargs(settings))
+    return aioredis.sentinel.Sentinel(
+        settings.redis_sentinel_hosts,
+        **_standard_connection_kwargs(settings),
+        sentinel_kwargs={
+            **_standard_connection_kwargs(settings),
+            "password": settings.redis_sentinel_password or settings.redis_password,
+        },
+    )
 
 
 @cache
