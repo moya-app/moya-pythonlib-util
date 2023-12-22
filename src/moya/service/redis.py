@@ -45,7 +45,7 @@ def pool(settings: RedisSettings) -> aioredis.ConnectionPool:
         decode_responses=True,
         password=settings.redis_password,
         socket_connect_timeout=settings.redis_timeout,
-        soket_timeout=settings.redis_timeout,
+        socket_timeout=settings.redis_timeout,
         retry=retry,
         retry_on_error=[ConnectionError, TimeoutError],
     )
