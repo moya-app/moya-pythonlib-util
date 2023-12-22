@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from functools import cache
 
 import redis.asyncio as aioredis
-from redis import Redis  # noqa: F401 for reexport
+from redis.asyncio import Redis  # noqa: F401 for reexport
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import (  # noqa: F401 for reexport
     ConnectionError,
