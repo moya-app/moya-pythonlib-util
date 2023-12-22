@@ -14,14 +14,13 @@ See individual module documentation for usage.
 - [ ] standard fastapi root router for version call
 - [ ] add tests for src/moya/util/background.py
 - [ ] sentry auto-config plugin
-- [ ] inbound gzip handler
 - [ ] rapidpro start flow?
 
 # Development
 
 ## Installation
 
-    sudo python3 -m pip install -e .[dev,kafka,pydantic-v2,redis]
+    sudo python3 -m pip install -e .[dev,pydantic-v2,all]
 
 ## Linting
 

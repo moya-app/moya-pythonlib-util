@@ -18,7 +18,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install -e ".[dev,kafka,redis,pydantic-${{ matrix.pydantic-version }}]"
+          python -m pip install -e ".[dev,pydantic-${{ matrix.pydantic-version }},all]"
       - name: Run lint
         run: |
           poe lint
