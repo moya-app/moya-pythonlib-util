@@ -20,6 +20,7 @@ include = '\.pyi?$'
 [tool.flake8]
 max-line-length = 160
 max-complexity = 10
+extend-ignore = "C901"
 
 [tool.isort]
 profile = "black"
