@@ -139,7 +139,12 @@ async def redis(readonly: bool = False, settings: RedisSettings = None) -> t.Asy
     await conn.aclose()
 
 
-async def redis_try_run(coro: t.Callable[[t.Any], t.Awaitable[t.Any]], readonly: bool = False) -> t.Optional[t.Any]:
+Result = t.TypeVar("Result")
+
+
+async def redis_try_run(
+    coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]], readonly: bool = False
+) -> t.Optional[Result]:
     """
     Run a coroutine and log and ignore redis-specific errors. Depending on
     whether connection succeeds the coroutine may never even be run.
