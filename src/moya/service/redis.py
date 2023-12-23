@@ -1,3 +1,4 @@
+import json
 import logging
 import typing as t
 from contextlib import asynccontextmanager
@@ -14,6 +15,7 @@ from redis.exceptions import (  # noqa: F401 for reexport
 )
 from redis.retry import Retry
 
+from moya.util.background import run_in_background
 from moya.util.config import MoyaSettings
 
 logger = logging.getLogger("moya-redis")
@@ -170,3 +172,42 @@ async def redis_try_run(
     except RedisError as e:
         logger.exception("Redis general error", exc_info=e)
         return None
+
+
+CachedFunc = t.Callable[..., t.Awaitable[Result]]
+
+
+def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], CachedFunc]:
+    """
+    Decorator to cache the result of a function in redis
+
+    :param key: The key prefix to use for the cache (it will serialize all the
+      arguments to the function as part of the key too).
+    :param expiry: The expiry time in seconds. If not set, the result will be cached forever.
+    """
+
+    def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> CachedFunc:
+        async def wrapper(*args: t.Any, **kwargs: t.Any) -> Result:
+            cache_key = f"{key}:{args}:{kwargs}"
+
+            async def fetch(redis_conn: Redis) -> t.Any:
+                data = await redis_conn.get(cache_key)
+                if data:
+                    return json.loads(data)
+                return None
+
+            cached = await redis_try_run(fetch, readonly=True)
+            if cached:
+                return t.cast(Result, cached)
+
+            result = await func(*args, **kwargs)
+
+            async def update_redis(redis_conn: Redis) -> None:
+                await redis_conn.set(cache_key, json.dumps(result), ex=expiry)
+
+            await run_in_background(redis_try_run(update_redis))
+            return result
+
+        return wrapper
+
+    return decorator

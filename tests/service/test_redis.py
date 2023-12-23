@@ -82,8 +82,8 @@ async def test_redis(subtests):
     sentinel_hosts = '[["192.168.144.2", 26379]]'
 
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
-        for readonly in (True, False):
-            with fake_redis_config(config):
+        with fake_redis_config(config):
+            for readonly in (True, False):
                 with subtests.test(f"redis() {config} readonly={readonly}"):
                     async with r.redis(readonly) as redis_conn, random_key() as key:
                         ok = await redis_conn.set(key, "value")
@@ -99,6 +99,7 @@ async def test_redis(subtests):
                             assert await redis_conn.get(key) == "value", "Should have been able to get redis key"
 
                     await r.redis_try_run(runner, readonly=readonly)
+            # TODO: Test @redis_cached
 
 
 @pytest.mark.asyncio
