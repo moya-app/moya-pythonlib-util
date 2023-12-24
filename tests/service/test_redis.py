@@ -81,6 +81,11 @@ async def test_redis(subtests):
     redis_url = "redis://192.168.144.3:6379/0"
     sentinel_hosts = '[["192.168.144.2", 26379]]'
 
+    @r.redis_cached(key="test")
+    async def cache_test(value: int) -> int:
+        return value + 1
+
+    i = 0
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
         with fake_redis_config(config):
             for readonly in (True, False):
@@ -99,19 +104,27 @@ async def test_redis(subtests):
                             assert await redis_conn.get(key) == "value", "Should have been able to get redis key"
 
                     await r.redis_try_run(runner, readonly=readonly)
-            # TODO: Test @redis_cached
+
+            with subtests.test(f"@redis_cached {config}"):
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                i += 1
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                i += 1
 
 
 @pytest.mark.asyncio
 async def test_redis_bad_host(subtests):
     redis_url = "redis://10.0.0.1:6379/0"
     sentinel_hosts = '[["10.0.0.1", 26379]]'
+
+    @r.redis_cached(key="test")
+    async def cache_test(value: int) -> int:
+        return value + 1
+
+    i = 0
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
-        with fake_redis_config(
-            {
-                **config,
-            }
-        ):
+        with fake_redis_config(config):
             s = r.redis_settings()
             with subtests.test(f"redis({s})"), pytest.raises(r.ConnectionError if s.is_sentinel else r.TimeoutError):
                 async with r.redis() as redis_conn:
@@ -129,6 +142,13 @@ async def test_redis_bad_host(subtests):
 
                 assert await r.redis_try_run(runner) is None, "Should return None value"
                 assert was_run is False, "Should not have run runner due to connection failure"
+
+            with subtests.test(f"@redis_cached({r.redis_settings()})"):
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                i += 1
+                assert await cache_test(i) == i + 1, "Decorator should have worked"
+                i += 1
 
 
 # TODO: Lots of mocking for different connection error scenarios like sentinel available but redis not etc
