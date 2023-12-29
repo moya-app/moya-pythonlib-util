@@ -13,7 +13,7 @@ class LoggingSettings(MoyaSettings):
 log_settings = LoggingSettings()
 
 
-def setup_logging():
+def setup_logging() -> None:
     """
     Initial logging setup
     """
