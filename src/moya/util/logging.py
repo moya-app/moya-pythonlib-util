@@ -12,6 +12,7 @@ class LoggingSettings(MoyaSettings):
 
 log_settings = LoggingSettings()
 
+
 def setup_logging():
     """
     Initial logging setup
