@@ -8,6 +8,14 @@ Add the following to your requirements.txt and set up for ssh to be passed in du
 
 See individual module documentation for usage.
 
+# Build modifications when using the library
+
+- Add `git openssh-client` to `apt install`
+- Add `echo StrictHostKeyChecking=accept-new >> /etc/ssh/ssh_config` as a stage in the build
+- Modify `RUN pip3 install ...` to `RUN --mount=type=ssh pip3 install ...`
+- Build like `docker-compose build --ssh=default` and then use `docker-compose up -d` rather than using `docker-compose up -d --build`
+- You likely need to add `gcc libc6-dev` to `apt install` packages when using the kafka library
+
 ## TODOs
 
 - [ ] Business API → number lookup with caching + fastapi Depends() fn - see weather api for an example - moya_number and get_number
