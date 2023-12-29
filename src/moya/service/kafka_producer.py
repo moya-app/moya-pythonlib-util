@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import typing as t
 from functools import cache
 
 import aiokafka
@@ -59,13 +60,15 @@ class KafkaProducer:
         self.started = asyncio.get_running_loop().create_future()
         self.producer = aiokafka.AIOKafkaProducer(
             bootstrap_servers=self.settings.kafka_brokers,
+            # AWS requires SASL auth via the below
             security_protocol=self.settings.kafka_security_protocol,
             ssl_context=create_ssl_context(),
-            # compression_type='lz4',
             sasl_mechanism=self.settings.kafka_sasl_mechanism,
-            # TODO: Does this work on AWS?
             sasl_plain_username=self.settings.kafka_username,
             sasl_plain_password=self.settings.kafka_password,
+            # Optimizations
+            linger_ms=200,  # 200ms batches to improve send performance
+            compression_type="lz4",
         )
 
         # Wait for kafka to start up and connect to it
@@ -85,7 +88,11 @@ class KafkaProducer:
         if self.started and self.started.done():
             await self.producer.stop()
 
-    async def send(self, topic: str, payload: dict) -> None:
+    async def send_nowait(self, topic: str, payload: dict) -> asyncio.Future:  # [aiokafka.RecordMetadata]:
+        """
+        Send a message to kafka and return a future which will be resolved when
+        the message send has been completed
+        """
         if not self.started:
             raise Exception("Kafka producer not started")
         if not self.started.done():
@@ -94,8 +101,17 @@ class KafkaProducer:
             except asyncio.TimeoutError:
                 raise Exception("Kafka producer not started")
 
-        # TODO: Just .send() ?
-        await self.producer.send_and_wait(topic, json.dumps(payload).encode("utf-8"))
+        fut = await self.producer.send(topic, json.dumps(payload).encode("utf-8"))
+        # return t.cast(asyncio.Future[aiokafka.RecordMetadata], fut)
+        return t.cast(asyncio.Future, fut)
+
+    async def send(self, topic: str, payload: dict) -> t.Any:  # aiokafka.RecordMetadata:
+        """
+        Send a message to kafka and wait for it to successfully complete. This
+        may block for a few seconds, so you should run it in the background to
+        allow batching, for example using moya.util.background.run_in_background()
+        """
+        return await self.send_nowait(topic, payload)
 
 
 @cache

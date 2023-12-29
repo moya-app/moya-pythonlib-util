@@ -17,7 +17,7 @@ extras_require = {
         "types-cachetools==5.3.0.7",
     ],
     "kafka": [
-        "aiokafka>=0.9.0",
+        "aiokafka[lz4]>=0.9.0",
     ],
     "redis": [
         "redis==5.0.1",

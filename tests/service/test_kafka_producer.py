@@ -47,8 +47,12 @@ async def test_kafka_producer_library():
         await k.start()
         mock_start.assert_called_once()
 
-    with patch("aiokafka.AIOKafkaProducer.send_and_wait") as mock_send:
+    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
         await k.send("test", {"test": "test"})
+        mock_send.assert_called_once_with("test", b'{"test": "test"}')
+
+    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+        await k.send_nowait("test", {"test": "test"})
         mock_send.assert_called_once_with("test", b'{"test": "test"}')
 
     with patch("aiokafka.AIOKafkaProducer.stop"):
