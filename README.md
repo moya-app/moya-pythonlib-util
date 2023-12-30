@@ -18,7 +18,6 @@ See individual module documentation for usage.
 
 ## TODOs
 
-- [ ] Business API → number lookup with caching + fastapi Depends() fn - see weather api for an example - moya_number and get_number
 - [ ] standard fastapi root router for version call
 - [ ] add tests for src/moya/util/background.py
 - [ ] add kafka tests with real kafka rather than just mocked
@@ -38,4 +37,4 @@ See individual module documentation for usage.
 
 ## Testing
 
-    pytest
+    poe test
