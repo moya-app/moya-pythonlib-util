@@ -73,7 +73,6 @@ def test_settings():
         r.RedisSettings()
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip("Only on live testing")
 async def test_redis(subtests):
     # TODO: Only if docker-compose env is up for local testing
@@ -113,7 +112,6 @@ async def test_redis(subtests):
                 i += 1
 
 
-@pytest.mark.asyncio
 async def test_redis_bad_host(subtests):
     redis_url = "redis://10.0.0.1:6379/0"
     sentinel_hosts = '[["10.0.0.1", 26379]]'

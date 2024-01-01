@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from moya.middleware.gzip_route import GzipRoute
 
 
-@pytest.mark.asyncio
 async def test_inbound_gzip(subtests: t.Any) -> None:
     app = FastAPI()
     client = AsyncClient(app=app, base_url="http://test")

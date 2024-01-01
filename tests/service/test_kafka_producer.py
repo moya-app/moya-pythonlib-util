@@ -18,7 +18,6 @@ def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
     )
 
 
-@pytest.mark.asyncio
 @patch("asyncio.sleep")  # disable actually sleeping
 async def test_kafka_bad_connection(mock_sleep):
     k = kafka_producer.KafkaProducer(get_test_settings())
@@ -39,7 +38,6 @@ async def test_kafka_bad_connection(mock_sleep):
     await k.stop()
 
 
-@pytest.mark.asyncio
 async def test_kafka_producer_library():
     k = kafka_producer.KafkaProducer(get_test_settings())
 
@@ -60,7 +58,6 @@ async def test_kafka_producer_library():
         mock_start.assert_called_once()
 
 
-@pytest.mark.asyncio
 async def test_kafka_producer_fn():
     k = kafka_producer.kafka_producer(get_test_settings())
     assert k.settings.kafka_brokers == "localhost:9092"
