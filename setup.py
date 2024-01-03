@@ -15,6 +15,7 @@ extras_require = {
         "pytest==7.1.3",
         "respx==0.20.2",
         "types-cachetools==5.3.0.7",
+        "sentry-sdk==1.39.1",
     ],
     "kafka": [
         "aiokafka[lz4]>=0.9.0",
@@ -32,6 +33,7 @@ extras_require = {
     "fastapi": [
         "fastapi>=0.95.0",
         "typing-extensions>=4.8.0",
+        "sentry-sdk[fastapi]",
     ],
 }
 extras_require["all"] = [item for name, group in extras_require.items() if name not in {"dev", "pydantic-v1", "pydantic-v2"} for item in group]
