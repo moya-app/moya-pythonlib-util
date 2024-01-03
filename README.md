@@ -21,7 +21,6 @@ See individual module documentation for usage.
 - [ ] standard fastapi root router for version call
 - [ ] add tests for src/moya/util/background.py
 - [ ] add kafka tests with real kafka rather than just mocked
-- [ ] sentry auto-config plugin
 - [ ] rapidpro start flow?
 
 # Development

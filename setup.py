@@ -1,7 +1,6 @@
 from setuptools import setup, find_namespace_packages
 
 extras_require = {
-    # TODO
     "dev": [
         "black==23.3.0",
         "flake8==6.1.0",
@@ -15,7 +14,6 @@ extras_require = {
         "pytest==7.1.3",
         "respx==0.20.2",
         "types-cachetools==5.3.0.7",
-        "sentry-sdk==1.39.1",
     ],
     "kafka": [
         "aiokafka[lz4]>=0.9.0",
@@ -50,6 +48,7 @@ setup(
     },
     description="Moya Util Library",
     install_requires=[
+        "sentry-sdk==1.39.1",
     ],
     extras_require=extras_require,
     test_suite="tests",
