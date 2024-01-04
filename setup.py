@@ -49,6 +49,7 @@ setup(
     description="Moya Util Library",
     install_requires=[
         "sentry-sdk==1.39.1",
+        "opentelemetry-distro",
     ],
     extras_require=extras_require,
     test_suite="tests",
