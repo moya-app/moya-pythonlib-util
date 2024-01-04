@@ -4,6 +4,8 @@ import sentry_sdk
 
 from moya.util.config import MoyaSettings
 
+# from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+
 
 class SentrySettings(MoyaSettings):
     environment: t.Optional[str] = "dev"
@@ -38,3 +40,8 @@ def init(ignore_exceptions: t.Sequence[t.Type[Exception]] = ()) -> None:
         traces_sample_rate=0,
         before_send=sentry_before_send,
     )
+
+    # try:
+    #     app.add_middleware(SentryAsgiMiddleware)
+    # except Exception as e:
+    #     logger.exception(f"Sentry client failure: {e}")
