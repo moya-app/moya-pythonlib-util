@@ -24,4 +24,4 @@ jobs:
           poe lint
       - name: Test with pytest
         run: |
-          poe test -vv -s --log-cli-level=DEBUG
+          poe test
