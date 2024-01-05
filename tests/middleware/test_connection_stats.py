@@ -38,7 +38,7 @@ async def test_fastapi() -> None:
 
     async with patch_trace() as called, httpx.AsyncClient(app=app, base_url="http://test") as client:
         await client.get("/item")
-        assert called == {"bytes.tx": 14}
+        assert called == {"bytes.rx": 0, "bytes.tx": 14}
 
     async with patch_trace() as called, httpx.AsyncClient(app=app, base_url="http://test") as client:
         await client.post("/item", json={"name": "Bar"})

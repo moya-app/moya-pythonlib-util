@@ -32,6 +32,7 @@ extras_require = {
         "fastapi>=0.95.0",
         "typing-extensions>=4.8.0",
         "sentry-sdk[fastapi]",
+        "opentelemetry-instrumentation-fastapi",
     ],
 }
 extras_require["all"] = [item for name, group in extras_require.items() if name not in {"dev", "pydantic-v1", "pydantic-v2"} for item in group]
@@ -39,7 +40,7 @@ extras_require["all"] = [item for name, group in extras_require.items() if name 
 setup(
     name="moya-pythonlib-util",
     packages=find_namespace_packages(where="src"),
-    version="0.1.0",
+    version="0.4.0",
     package_dir={"": "src"},
     package_data={
         "moya.util": ["py.typed"],
