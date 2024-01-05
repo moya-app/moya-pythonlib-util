@@ -23,5 +23,6 @@ jobs:
         run: |
           poe lint
       - name: Test with pytest
+        # A 250 exit status sometimes randomly comes from the coverage report black magic
         run: |
-          poe test
+          poe test -vv
