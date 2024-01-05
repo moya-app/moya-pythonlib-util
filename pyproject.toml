@@ -51,7 +51,8 @@ module = ["tests.*"]
 disallow_untyped_defs = false
 
 [tool.poe.tasks]
-test = "pytest . --cov=src --cov-report=term"
+test = "pytest ."
+#--cov=src --cov-report=term"
 "lint:flake8" = "flake8 src/ tests/"
 "lint:black" = "black --check --diff src/ tests/"
 "lint:mypy" = "mypy src/ tests/"
