@@ -1,3 +1,4 @@
+import asyncio
 import os
 import typing as t
 import uuid
@@ -73,18 +74,13 @@ def test_settings():
         r.RedisSettings()
 
 
-@pytest.mark.skip("Only on live testing")
+# @pytest.mark.skip("Only on live testing")
 async def test_redis(subtests):
     # TODO: Only if docker-compose env is up for local testing
     # docker inspect $(docker-compose ps -q redis-sentinel)
     redis_url = "redis://192.168.144.3:6379/0"
     sentinel_hosts = '[["192.168.144.2", 26379]]'
 
-    @r.redis_cached(key="test")
-    async def cache_test(value: int) -> int:
-        return value + 1
-
-    i = 0
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
         with fake_redis_config(config):
             for readonly in (True, False):
@@ -105,11 +101,26 @@ async def test_redis(subtests):
                     await r.redis_try_run(runner, readonly=readonly)
 
             with subtests.test(f"@redis_cached {config}"):
-                assert await cache_test(i) == i + 1, "Decorator should have worked"
-                assert await cache_test(i) == i + 1, "Decorator should have worked"
-                i += 1
-                assert await cache_test(i) == i + 1, "Decorator should have worked"
-                i += 1
+                cache_call_count = 0
+
+                @r.redis_cached(key=random_key())
+                async def cache_test(value: int) -> int:
+                    nonlocal cache_call_count
+                    cache_call_count += 1
+                    return value + 1
+
+                assert await cache_test(1) == 2, "Decorator should have worked"
+                assert cache_call_count == 1
+                await asyncio.sleep(0.1)  # Allow cached value to go into redis in background
+                assert await cache_test(1) == 2, "Should now have been cached"
+                assert cache_call_count == 1
+
+                assert await cache_test(2) == 3, "New value should recalculate"
+                assert cache_call_count == 2
+
+                await cache_test.delete_entry(1)
+                assert await cache_test(1) == 2, "Should have been recalculated"
+                assert cache_call_count == 3, "When entry was deleted should have recalculated"
 
 
 async def test_redis_bad_host(subtests):

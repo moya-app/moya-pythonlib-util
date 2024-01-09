@@ -208,6 +208,15 @@ def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], Cache
             await run_in_background(redis_try_run(update_redis))
             return result
 
+        async def delete_entry(*args: t.Any, **kwargs: t.Any) -> None:
+            cache_key = f"{key}:{args}:{kwargs}"
+
+            async def delete(redis_conn: Redis) -> None:
+                await redis_conn.delete(cache_key)
+
+            await redis_try_run(delete)
+
+        wrapper.delete_entry = delete_entry  # type: ignore
         return wrapper
 
     return decorator
