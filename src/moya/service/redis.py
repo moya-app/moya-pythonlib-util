@@ -177,7 +177,42 @@ async def redis_try_run(
 CachedFunc = t.Callable[..., t.Awaitable[Result]]
 
 
-def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], CachedFunc]:
+class RedisCached:
+    def __init__(self, func: CachedFunc, key: str, expiry: int = None) -> None:
+        self.func = func
+        self.key = key
+        self.expiry = expiry
+
+    def get_cache_key(self, *args: t.Any, **kwargs: t.Any) -> str:
+        return f"{self.key}:{args}:{kwargs}"
+
+    async def __call__(self, *args: t.Any, **kwargs: t.Any) -> Result:
+        async def fetch(redis_conn: Redis) -> t.Any:
+            data = await redis_conn.get(self.get_cache_key(args, kwargs))
+            if data:
+                return json.loads(data)
+            return None
+
+        cached = await redis_try_run(fetch, readonly=True)
+        if cached:
+            return t.cast(Result, cached)
+
+        result = t.cast(Result, await self.func(*args, **kwargs))
+
+        async def update_redis(redis_conn: Redis) -> None:
+            await redis_conn.set(self.get_cache_key(args, kwargs), json.dumps(result), ex=self.expiry)
+
+        await run_in_background(redis_try_run(update_redis))
+        return result
+
+    async def delete_entry(self, *args: t.Any, **kwargs: t.Any) -> None:
+        async def delete(redis_conn: Redis) -> None:
+            await redis_conn.delete(self.get_cache_key(args, kwargs))
+
+        await redis_try_run(delete)
+
+
+def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], RedisCached]:
     """
     Decorator to cache the result of a function in redis
 
@@ -186,37 +221,7 @@ def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], Cache
     :param expiry: The expiry time in seconds. If not set, the result will be cached forever.
     """
 
-    def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> CachedFunc:
-        async def wrapper(*args: t.Any, **kwargs: t.Any) -> Result:
-            cache_key = f"{key}:{args}:{kwargs}"
-
-            async def fetch(redis_conn: Redis) -> t.Any:
-                data = await redis_conn.get(cache_key)
-                if data:
-                    return json.loads(data)
-                return None
-
-            cached = await redis_try_run(fetch, readonly=True)
-            if cached:
-                return t.cast(Result, cached)
-
-            result = await func(*args, **kwargs)
-
-            async def update_redis(redis_conn: Redis) -> None:
-                await redis_conn.set(cache_key, json.dumps(result), ex=expiry)
-
-            await run_in_background(redis_try_run(update_redis))
-            return result
-
-        async def delete_entry(*args: t.Any, **kwargs: t.Any) -> None:
-            cache_key = f"{key}:{args}:{kwargs}"
-
-            async def delete(redis_conn: Redis) -> None:
-                await redis_conn.delete(cache_key)
-
-            await redis_try_run(delete)
-
-        wrapper.delete_entry = delete_entry  # type: ignore
-        return wrapper
+    def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> RedisCached:
+        return RedisCached(func, key, expiry)
 
     return decorator

@@ -74,8 +74,8 @@ def test_settings():
         r.RedisSettings()
 
 
-# @pytest.mark.skip("Only on live testing")
-async def test_redis(subtests):
+@pytest.mark.skip("Only on live testing")
+async def test_redis(subtests) -> None:
     # TODO: Only if docker-compose env is up for local testing
     # docker inspect $(docker-compose ps -q redis-sentinel)
     redis_url = "redis://192.168.144.3:6379/0"
@@ -103,7 +103,7 @@ async def test_redis(subtests):
             with subtests.test(f"@redis_cached {config}"):
                 cache_call_count = 0
 
-                @r.redis_cached(key=random_key())
+                @r.redis_cached(key=f"cachetest:{uuid.uuid4()}")
                 async def cache_test(value: int) -> int:
                     nonlocal cache_call_count
                     cache_call_count += 1
