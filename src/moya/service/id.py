@@ -1,7 +1,22 @@
 from datetime import datetime, timezone
 
+from pydantic import BaseModel
+
+
+class IDDetails(BaseModel):
+    date_of_birth: datetime
+    gender: str
+    citizenship: str
+
 
 def is_luhn_valid(id_number: str) -> bool:
+    """
+    Check if a given ID number is valid according to the Luhn algorithm.
+    The Luhn algorithm is a simple checksum formula used to validate a variety of identification numbers.
+    It works by summing up the digits of the number, with every second digit doubled.
+    If the result is divisible by 10, the number is considered valid.
+    """
+
     def digits_of(n: str | int) -> list[int]:
         return [int(d) for d in str(n)]
 
@@ -15,7 +30,7 @@ def is_luhn_valid(id_number: str) -> bool:
     return checksum % 10 == 0
 
 
-def parse_rsa_id(id_number: str) -> tuple[int, str, str]:
+def parse_rsa_id(id_number: str) -> IDDetails:
     """
     Parse details from an RSA ID Number
     """
@@ -31,5 +46,6 @@ def parse_rsa_id(id_number: str) -> tuple[int, str, str]:
 
     gender = "Female" if int(id_number[6:10]) < 5000 else "Male"
     citizenship = "SA Citizen" if id_number[10] == "0" else "Permanent Resident"
+    date_of_birth = datetime(year, month, day, tzinfo=timezone.utc).timestamp()
 
-    return int(datetime(year, month, day, tzinfo=timezone.utc).timestamp()), gender, citizenship
+    return IDDetails(date_of_birth=date_of_birth, gender=gender, citizenship=citizenship)
