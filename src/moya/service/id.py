@@ -46,6 +46,6 @@ def parse_rsa_id(id_number: str) -> IDDetails:
 
     gender = "Female" if int(id_number[6:10]) < 5000 else "Male"
     citizenship = "SA Citizen" if id_number[10] == "0" else "Permanent Resident"
-    date_of_birth = datetime(year, month, day, tzinfo=timezone.utc).timestamp()
+    date_of_birth = datetime(year, month, day, tzinfo=timezone.utc)
 
     return IDDetails(date_of_birth=date_of_birth, gender=gender, citizenship=citizenship)
