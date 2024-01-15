@@ -14,7 +14,10 @@ Easy library for using FastAPI with Ratelimiters
 class RateLimitSettings(MoyaSettings):
     """
     Extract environment variable APP_RATELIMITS and use it to configure
-    ratelimiters
+    ratelimiters.
+
+    A default entry of "*" can be used to set a default rate limit for all
+    endpoints which do not have a specific limiter config set up.
     """
 
     ratelimits: dict[str, RateLimit]

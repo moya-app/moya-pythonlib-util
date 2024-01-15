@@ -148,7 +148,7 @@ class RedisLimiter(LimitBase):
 
         await redis_try_run(check_rates, readonly=True)
 
-        async def cleanup_rates(redis: Redis) -> None:
+        async def update_rates(redis: Redis) -> None:
             async with redis.pipeline() as pipe:
                 # Log the request
                 pipe.zadd(key, {str(now): now})  # TODO: Better key name - random id perhaps?
@@ -160,7 +160,7 @@ class RedisLimiter(LimitBase):
                 pipe.zremrangebyscore(key, 0, now - self.rates.max_duration)
                 await pipe.execute()
 
-        await run_in_background(redis_try_run(cleanup_rates))
+        await run_in_background(redis_try_run(update_rates))
 
     async def flush_user(self, user_id: str) -> None:
         async def cleanup_rates(redis: Redis) -> None:

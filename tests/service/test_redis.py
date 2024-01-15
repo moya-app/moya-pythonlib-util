@@ -31,8 +31,8 @@ def fake_redis_config(env: dict) -> t.Generator[None, None, None]:
         "APP_REDIS_PASSWORD": "testpassword",
     }
     with patch.dict(os.environ, {**default_test_env, **env}):
-        reset_redis_caches()
         yield
+        reset_redis_caches()
 
 
 def test_settings():
@@ -74,14 +74,14 @@ def test_settings():
         r.RedisSettings()
 
 
-@pytest.mark.skip("Only on live testing")
+@pytest.mark.skipif(
+    "SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env"
+)
 async def test_redis(subtests) -> None:
-    # TODO: Only if docker-compose env is up for local testing
-    # docker inspect $(docker-compose ps -q redis-sentinel)
-    redis_url = "redis://192.168.144.3:6379/0"
-    sentinel_hosts = '[["192.168.144.2", 26379]]'
-
-    for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
+    for config in [
+        {"APP_REDIS_URL": os.environ["REDIS_URL"]},
+        {"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]},
+    ]:
         with fake_redis_config(config):
             for readonly in (True, False):
                 with subtests.test(f"redis() {config} readonly={readonly}"):
