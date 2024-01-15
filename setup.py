@@ -14,6 +14,7 @@ extras_require = {
         "pytest==7.1.3",
         "respx==0.20.2",
         "types-cachetools==5.3.0.7",
+        "time-machine==2.13.0",
     ],
     "kafka": [
         "aiokafka[lz4]>=0.9.0",

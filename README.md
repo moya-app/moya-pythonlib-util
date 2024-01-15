@@ -36,3 +36,11 @@ See individual module documentation for usage.
 ## Testing
 
     poe test
+
+Or to test against real redis:
+
+    cd test_envs/redis-sentinel
+    docker-compose up -d
+    export REDIS_URL="redis://$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose ps -q redis)):6379/0"
+    export SENTINEL_HOSTS='[["'$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose ps -q redis-sentinel))'", 26379]]'
+    poe test

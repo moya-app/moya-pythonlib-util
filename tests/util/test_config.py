@@ -6,10 +6,10 @@ from moya.util.config import BaseModel, MoyaSettings
 
 
 def test_moya_settings() -> None:
-    os.environ["FOO"] = "foo"
     with patch.dict(
         os.environ,
         {
+            "FOO": "foo",
             "APP_FOO": "bar",
             # Implicit integer conversion
             "APP_BAR": "0",
