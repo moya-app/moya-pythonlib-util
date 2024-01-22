@@ -6,7 +6,7 @@ extras_require = {
         "flake8==6.1.0",
         "Flake8-pyproject==1.2.3",
         "isort==5.12.0",
-        "mypy==1.5.1",
+        "mypy==1.8.0",
         "poethepoet==0.22.0",
         "pytest-asyncio==0.21.0",
         "pytest-cov==4.1.0",

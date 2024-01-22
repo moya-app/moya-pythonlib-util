@@ -24,7 +24,7 @@ async def test_kafka_bad_connection(mock_sleep):
     with pytest.raises(Exception, match="Kafka producer not started"):
         await k.send("test", {"test": "test"})
 
-    with pytest.raises(Exception, match="Could not connect to Kafka"):
+    with pytest.raises(Exception, match="Timeout connecting to Kafka"):
         await k.start()
 
     assert mock_sleep.call_count == 20, "Should have tried a number of times to connect"
@@ -47,11 +47,11 @@ async def test_kafka_producer_library():
 
     with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
         await k.send("test", {"test": "test"})
-        mock_send.assert_called_once_with("test", b'{"test": "test"}')
+        mock_send.assert_called_once_with("test", b'{"test": "test"}', timestamp_ms=None)
 
     with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
         await k.send_nowait("test", {"test": "test"})
-        mock_send.assert_called_once_with("test", b'{"test": "test"}')
+        mock_send.assert_called_once_with("test", b'{"test": "test"}', timestamp_ms=None)
 
     with patch("aiokafka.AIOKafkaProducer.stop"):
         await k.stop()
