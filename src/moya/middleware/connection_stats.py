@@ -6,7 +6,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 def extract_moya_details(user_agent: str) -> tuple[str, str] | None:
     ua_match = re.search(r"\bMoya(-ios)?[-/]([\d\.]+)", user_agent, re.IGNORECASE)
-    if not ua_match:
+    if ua_match is None:
         return None
     platform = "ios" if ua_match.group(1) else "android"
     version = ua_match.group(2)
