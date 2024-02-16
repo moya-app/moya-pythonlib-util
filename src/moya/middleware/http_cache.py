@@ -1,5 +1,6 @@
 import typing as t
-from email.utils import parsedate
+from datetime import datetime, timezone
+from email.utils import format_datetime, parsedate
 
 from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -42,7 +43,7 @@ class IfModifiedSinceMiddleware(BaseHTTPMiddleware):
 def set_cache_headers(
     request: Request,
     response: Response,
-    last_modified: str = None,
+    last_modified: str | int | datetime = None,
     max_age: int = None,
     stale_if_error: int = 60 * 60,
     public: bool = True,
@@ -52,7 +53,9 @@ def set_cache_headers(
     Set cache headers on the response
 
     :param response: The response object to set headers on
-    :param last_modified: The last modified date of the content (as a http header string)
+    :param last_modified: The last modified date of the content. If str is
+        passed, it will be used as is. If int (unix epoch) or datetime is
+        passed, it will be converted to a http timestamp.
     :param max_age: The maximum time the content should be cached for as an integer
     :param stale_if_error: The time the content can be used if there is a server error. Defaults to 1 hour
     :param public: If the content can be cached by public caches. Defaults to True
@@ -71,6 +74,11 @@ def set_cache_headers(
     response.headers["Cache-Control"] = ", ".join(cache_control)
 
     if last_modified:
+        if isinstance(last_modified, int):
+            last_modified = datetime.utcfromtimestamp(last_modified).replace(tzinfo=timezone.utc)
+        if isinstance(last_modified, datetime):
+            last_modified = format_datetime(last_modified, usegmt=True)
+
         response.headers["last-modified"] = last_modified
 
         # See if we should just return a 304 no updated data response based on the last-mod time

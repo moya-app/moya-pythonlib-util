@@ -1,13 +1,24 @@
 import typing as t
+from datetime import datetime, timezone
 
 import httpx
+import pytest
 from fastapi import FastAPI, Request, Response
 from pydantic import BaseModel
 
 from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_headers
 
 
-async def test_cache_headers(subtests: t.Any) -> None:
+@pytest.mark.parametrize(
+    "last_modified",
+    [
+        # Try the 3 variations of last_modified being allowed
+        "Fri, 16 Feb 2024 10:37:38 GMT",
+        1708079858,
+        datetime(2024, 2, 16, 10, 37, 38, tzinfo=timezone.utc),
+    ],
+)
+async def test_cache_headers(subtests: t.Any, last_modified: str | int | datetime) -> None:
     app = FastAPI()
     client = httpx.AsyncClient(app=app, base_url="http://test")
 
@@ -16,7 +27,7 @@ async def test_cache_headers(subtests: t.Any) -> None:
 
     @app.get("/item")
     async def read_item(request: Request, response: Response) -> TestItem:
-        set_cache_headers(request, response, last_modified="Fri, 16 Feb 2024 10:37:38 GMT", max_age=3600)
+        set_cache_headers(request, response, last_modified=last_modified, max_age=3600)
         return TestItem(name="Foo")
 
     for headers in (
