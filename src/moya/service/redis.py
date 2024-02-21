@@ -199,8 +199,14 @@ class RedisCached:
 
         result = t.cast(Result, await self.func(*args, **kwargs))
 
+        # Dump the result to a local variable as it would be saved to redis
+        # here before the background task runs. There may be a race if the
+        # result is modified by the caller before the update_redis() function
+        # is run.
+        saved_result = json.dumps(result)
+
         async def update_redis(redis_conn: Redis) -> None:
-            await redis_conn.set(self.get_cache_key(args, kwargs), json.dumps(result), ex=self.expiry)
+            await redis_conn.set(self.get_cache_key(args, kwargs), saved_result, ex=self.expiry)
 
         await run_in_background(redis_try_run(update_redis))
         return result
