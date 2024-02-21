@@ -178,10 +178,11 @@ CachedFunc = t.Callable[..., t.Awaitable[Result]]
 
 
 class RedisCached:
-    def __init__(self, func: CachedFunc, key: str, expiry: int = None) -> None:
+    def __init__(self, func: CachedFunc, key: str, expiry: int = None, cache_none: bool = True) -> None:
         self.func = func
         self.key = key
         self.expiry = expiry
+        self.cache_none = cache_none
 
     def get_cache_key(self, *args: t.Any, **kwargs: t.Any) -> str:
         return f"{self.key}:{args}:{kwargs}"
@@ -198,6 +199,8 @@ class RedisCached:
             return t.cast(Result, cached)
 
         result = t.cast(Result, await self.func(*args, **kwargs))
+        if result is None and not self.cache_none:
+            return result
 
         # Dump the result to a local variable as it would be saved to redis
         # here before the background task runs. There may be a race if the
@@ -218,16 +221,17 @@ class RedisCached:
         await redis_try_run(delete)
 
 
-def redis_cached(key: str, expiry: int = None) -> t.Callable[[CachedFunc], RedisCached]:
+def redis_cached(key: str, expiry: int = None, cache_none: bool = True) -> t.Callable[[CachedFunc], RedisCached]:
     """
     Decorator to cache the result of a function in redis
 
     :param key: The key prefix to use for the cache (it will serialize all the
       arguments to the function as part of the key too).
     :param expiry: The expiry time in seconds. If not set, the result will be cached forever.
+    :param cache_none: If set to False, the result will not be cached if it is None.
     """
 
     def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> RedisCached:
-        return RedisCached(func, key, expiry)
+        return RedisCached(func, key, expiry, cache_none=cache_none)
 
     return decorator
