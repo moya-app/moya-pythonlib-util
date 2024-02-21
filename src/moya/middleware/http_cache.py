@@ -43,7 +43,7 @@ class IfModifiedSinceMiddleware(BaseHTTPMiddleware):
 def set_cache_headers(
     request: Request,
     response: Response,
-    last_modified: str | int | datetime = None,
+    last_modified: str | int | float | datetime = None,
     max_age: int = None,
     stale_if_error: int = 60 * 60,
     public: bool = True,
@@ -54,7 +54,7 @@ def set_cache_headers(
 
     :param response: The response object to set headers on
     :param last_modified: The last modified date of the content. If str is
-        passed, it will be used as is. If int (unix epoch) or datetime is
+        passed, it will be used as is. If int/float (unix epoch) or datetime is
         passed, it will be converted to a http timestamp.
     :param max_age: The maximum time the content should be cached for as an integer
     :param stale_if_error: The time the content can be used if there is a server error. Defaults to 1 hour
@@ -74,7 +74,7 @@ def set_cache_headers(
     response.headers["Cache-Control"] = ", ".join(cache_control)
 
     if last_modified:
-        if isinstance(last_modified, int):
+        if isinstance(last_modified, (int, float)):
             last_modified = datetime.utcfromtimestamp(last_modified).replace(tzinfo=timezone.utc)
         if isinstance(last_modified, datetime):
             last_modified = format_datetime(last_modified, usegmt=True)

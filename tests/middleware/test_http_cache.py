@@ -15,6 +15,7 @@ from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_head
         # Try the 3 variations of last_modified being allowed
         "Fri, 16 Feb 2024 10:37:38 GMT",
         1708079858,
+        1708079858.2,
         datetime(2024, 2, 16, 10, 37, 38, tzinfo=timezone.utc),
     ],
 )
