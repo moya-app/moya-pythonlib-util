@@ -17,6 +17,7 @@ from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_head
         1708079858,
         1708079858.2,
         datetime(2024, 2, 16, 10, 37, 38, tzinfo=timezone.utc),
+        datetime(2024, 2, 16, 10, 37, 38),  # no explicit timezone
     ],
 )
 async def test_cache_headers(subtests: t.Any, last_modified: str | int | datetime) -> None:

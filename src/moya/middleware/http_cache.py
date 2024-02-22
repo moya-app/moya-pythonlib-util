@@ -75,8 +75,10 @@ def set_cache_headers(
 
     if last_modified:
         if isinstance(last_modified, (int, float)):
-            last_modified = datetime.utcfromtimestamp(last_modified).replace(tzinfo=timezone.utc)
+            last_modified = datetime.utcfromtimestamp(last_modified)
         if isinstance(last_modified, datetime):
+            if last_modified.tzinfo is None:
+                last_modified = last_modified.astimezone(timezone.utc)
             last_modified = format_datetime(last_modified, usegmt=True)
 
         response.headers["last-modified"] = last_modified
