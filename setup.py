@@ -34,6 +34,7 @@ extras_require = {
         "typing-extensions>=4.8.0",
         "sentry-sdk[fastapi]",
         "opentelemetry-instrumentation-fastapi",
+        "brotli==1.1.0",
     ],
 }
 extras_require["all"] = [item for name, group in extras_require.items() if name not in {"dev", "pydantic-v1", "pydantic-v2"} for item in group]
