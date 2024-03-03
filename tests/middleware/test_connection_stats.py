@@ -46,8 +46,8 @@ async def test_fastapi() -> None:
         raise HTTPException(status_code=400, detail="Bad Request")
 
     @app.get("/file")
-    async def read_item() -> FileResponse:
-        return FileResponse('tests/fixtures/1.png')
+    async def read_file() -> FileResponse:
+        return FileResponse("tests/fixtures/1.png")
 
     client = httpx.AsyncClient(app=app, base_url="http://test")
     with patch_trace() as called:
