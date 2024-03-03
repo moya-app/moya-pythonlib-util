@@ -5,6 +5,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from moya.middleware.connection_stats import (
@@ -44,10 +45,18 @@ async def test_fastapi() -> None:
     async def raise_err(test_item: TestItem) -> None:
         raise HTTPException(status_code=400, detail="Bad Request")
 
+    @app.get("/file")
+    async def read_item() -> FileResponse:
+        return FileResponse('tests/fixtures/1.png')
+
     client = httpx.AsyncClient(app=app, base_url="http://test")
     with patch_trace() as called:
         await client.get("/item")
         assert called == {"bytes.rx": 0, "bytes.tx": 14}
+
+    with patch_trace() as called:
+        await client.get("/file")
+        assert called == {"bytes.rx": 0, "bytes.tx": 26529}
 
     with patch_trace() as called:
         await client.post("/item", json={"name": "Bar"})
