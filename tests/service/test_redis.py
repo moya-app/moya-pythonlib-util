@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager, contextmanager
 from unittest.mock import ANY, patch
 
 import pytest
+from pydantic import BaseModel
 
 import moya.service.redis as r
 
@@ -100,28 +101,6 @@ async def test_redis(subtests) -> None:
 
                     await r.redis_try_run(runner, readonly=readonly)
 
-            with subtests.test(f"@redis_cached {config}"):
-                cache_call_count = 0
-
-                @r.redis_cached(key=f"cachetest:{uuid.uuid4()}")
-                async def cache_test(value: int) -> int:
-                    nonlocal cache_call_count
-                    cache_call_count += 1
-                    return value + 1
-
-                assert await cache_test(1) == 2, "Decorator should have worked"
-                assert cache_call_count == 1
-                await asyncio.sleep(0.1)  # Allow cached value to go into redis in background
-                assert await cache_test(1) == 2, "Should now have been cached"
-                assert cache_call_count == 1
-
-                assert await cache_test(2) == 3, "New value should recalculate"
-                assert cache_call_count == 2
-
-                await cache_test.delete_entry(1)
-                assert await cache_test(1) == 2, "Should have been recalculated"
-                assert cache_call_count == 3, "When entry was deleted should have recalculated"
-
 
 async def test_redis_bad_host(subtests):
     redis_url = "redis://10.0.0.1:6379/0"
@@ -158,6 +137,55 @@ async def test_redis_bad_host(subtests):
                 i += 1
                 assert await cache_test(i) == i + 1, "Decorator should have worked"
                 i += 1
+
+
+class CacheTest(BaseModel):
+    value: int
+
+
+@pytest.mark.skipif(
+    "SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env"
+)
+async def test_redis_cached(subtests) -> None:
+    for config in [
+        {"APP_REDIS_URL": os.environ["REDIS_URL"]},
+        {"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]},
+    ]:
+        with fake_redis_config(config), subtests.test(f"@redis_cached {config}"):
+            cache_call_count = 0
+
+            @r.redis_cached(key=f"cachetest:{uuid.uuid4()}")
+            async def cache_test(value: int) -> int:
+                nonlocal cache_call_count
+                cache_call_count += 1
+                return value + 1
+
+            assert await cache_test(1) == 2, "Decorator should have worked"
+            assert cache_call_count == 1
+            await asyncio.sleep(0.1)  # Allow cached value to go into redis in background
+            assert await cache_test(1) == 2, "Should now have been cached"
+            assert cache_call_count == 1
+
+            assert await cache_test(2) == 3, "New value should recalculate"
+            assert cache_call_count == 2
+
+            await cache_test.delete_entry(1)
+            assert await cache_test(1) == 2, "Should have been recalculated"
+            assert cache_call_count == 3, "When entry was deleted should have recalculated"
+
+            cache_call_count = 0
+
+            @r.redis_cached(key=f"cachetest:{uuid.uuid4()}")
+            async def cache_pydantic(value: int) -> CacheTest:
+                nonlocal cache_call_count
+                cache_call_count += 1
+                return CacheTest(value=value + 1)
+
+            assert await cache_pydantic(1) == CacheTest(value=2), "Decorator should have worked"
+            assert cache_call_count == 1
+            await asyncio.sleep(0.1)  # Allow cached value to go into redis in background
+            assert await cache_pydantic(1) == CacheTest(value=2), "Should now have been cached"
+            assert cache_call_count == 1
 
 
 # TODO: Lots of mocking for different connection error scenarios like sentinel available but redis not etc

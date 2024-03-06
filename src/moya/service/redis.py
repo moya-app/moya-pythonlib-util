@@ -1,5 +1,5 @@
-import json
 import logging
+import pickle
 import typing as t
 from contextlib import asynccontextmanager
 from functools import cache
@@ -63,7 +63,7 @@ def redis_settings() -> RedisSettings:
     return RedisSettings()
 
 
-def _standard_connection_kwargs(settings: RedisSettings) -> dict[str, t.Any]:
+def _standard_connection_kwargs(settings: RedisSettings, decode_responses: bool = True) -> dict[str, t.Any]:
     """
     Return a dict of standard connection kwargs for all redis pools
     """
@@ -71,7 +71,7 @@ def _standard_connection_kwargs(settings: RedisSettings) -> dict[str, t.Any]:
     retry = Retry(ExponentialBackoff(), settings.redis_connect_retries)
     return {
         "encoding": "utf-8",
-        "decode_responses": True,
+        "decode_responses": decode_responses,
         "password": settings.redis_password,
         "socket_connect_timeout": settings.redis_timeout,
         "socket_timeout": settings.redis_timeout,
@@ -81,26 +81,28 @@ def _standard_connection_kwargs(settings: RedisSettings) -> dict[str, t.Any]:
 
 
 @cache
-def sentinel(settings: RedisSettings) -> aioredis.sentinel.Sentinel:
+def sentinel(settings: RedisSettings, **kwargs: t.Any) -> aioredis.sentinel.Sentinel:
     "Create a redis sentinel client"
     return aioredis.sentinel.Sentinel(
         settings.redis_sentinel_hosts,
-        **_standard_connection_kwargs(settings),
+        **_standard_connection_kwargs(settings, **kwargs),
         sentinel_kwargs={
-            **_standard_connection_kwargs(settings),
+            **_standard_connection_kwargs(settings, **kwargs),
             "password": settings.redis_sentinel_password or settings.redis_password,
         },
     )
 
 
 @cache
-def pool(settings: RedisSettings) -> aioredis.ConnectionPool:
+def pool(settings: RedisSettings, **kwargs: t.Any) -> aioredis.ConnectionPool:
     "Create a redis connection pool"
-    return aioredis.ConnectionPool.from_url(settings.redis_url, **_standard_connection_kwargs(settings))
+    return aioredis.ConnectionPool.from_url(settings.redis_url, **_standard_connection_kwargs(settings, **kwargs))
 
 
 @asynccontextmanager
-async def redis(readonly: bool = False, settings: RedisSettings = None) -> t.AsyncGenerator[aioredis.Redis, None]:
+async def redis(
+    readonly: bool = False, settings: RedisSettings = None, **kwargs: t.Any
+) -> t.AsyncGenerator[aioredis.Redis, None]:
     """
     Return a redis connection from the pool, and close it correctly when
     completed. If sentinel is available in the config it will prefer to use
@@ -125,13 +127,13 @@ async def redis(readonly: bool = False, settings: RedisSettings = None) -> t.Asy
         settings = redis_settings()
 
     if settings.is_sentinel:
-        sent = sentinel(settings)
+        sent = sentinel(settings, **kwargs)
         if readonly:
             conn = sent.slave_for(settings.redis_sentinel_service)
         else:
             conn = sent.master_for(settings.redis_sentinel_service)
     else:
-        conn = aioredis.Redis.from_pool(pool(settings))
+        conn = aioredis.Redis.from_pool(pool(settings, **kwargs))
 
     # For some reason this occasionally happens during redis failover rather
     # than from_pool just raising the exception
@@ -145,7 +147,7 @@ Result = t.TypeVar("Result")
 
 
 async def redis_try_run(
-    coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]], readonly: bool = False
+    coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]], readonly: bool = False, **kwargs: t.Any
 ) -> t.Optional[Result]:
     """
     Run a coroutine and log and ignore redis-specific errors. Depending on
@@ -164,7 +166,7 @@ async def redis_try_run(
     return await redis_try_run(fetch)
     """
     try:
-        async with redis(readonly) as redis_conn:
+        async with redis(readonly, **kwargs) as redis_conn:
             return await coro(redis_conn)
     except (ConnectionError, TimeoutError) as e:
         logger.exception("Redis connection error", exc_info=e)
@@ -185,16 +187,16 @@ class RedisCached:
         self.cache_none = cache_none
 
     def get_cache_key(self, *args: t.Any, **kwargs: t.Any) -> str:
-        return f"{self.key}:{args}:{kwargs}"
+        return f"pickle:{self.key}:{args}:{kwargs}"
 
     async def __call__(self, *args: t.Any, **kwargs: t.Any) -> Result:
         async def fetch(redis_conn: Redis) -> t.Any:
             data = await redis_conn.get(self.get_cache_key(args, kwargs))
             if data:
-                return json.loads(data)
+                return pickle.loads(data)
             return None
 
-        cached = await redis_try_run(fetch, readonly=True)
+        cached = await redis_try_run(fetch, readonly=True, decode_responses=False)
         if cached:
             return t.cast(Result, cached)
 
@@ -206,12 +208,12 @@ class RedisCached:
         # here before the background task runs. There may be a race if the
         # result is modified by the caller before the update_redis() function
         # is run.
-        saved_result = json.dumps(result)
+        saved_result = pickle.dumps(result)
 
         async def update_redis(redis_conn: Redis) -> None:
             await redis_conn.set(self.get_cache_key(args, kwargs), saved_result, ex=self.expiry)
 
-        await run_in_background(redis_try_run(update_redis))
+        await run_in_background(redis_try_run(update_redis, decode_responses=False))
         return result
 
     async def delete_entry(self, *args: t.Any, **kwargs: t.Any) -> None:
