@@ -34,6 +34,7 @@ extras_require = {
         "typing-extensions>=4.8.0",
         "sentry-sdk[fastapi]",
         "opentelemetry-instrumentation-fastapi",
+        "opentelemetry-instrumentation-logging",
         "brotli==1.1.0",
     ],
 }
