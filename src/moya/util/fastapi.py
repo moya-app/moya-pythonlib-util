@@ -1,6 +1,7 @@
 import typing as t
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from moya.middleware.connection_stats import ConnectionStatsMiddleware
@@ -28,7 +29,7 @@ def setup_fastapi(**kwargs: t.Any) -> FastAPI:
 
     # Add in standard endpoints so the app doesn't have to
     @fastapi.get("/version")
-    async def version() -> dict:
-        return {"version": settings.commit_tag}
+    async def version() -> JSONResponse:
+        return JSONResponse({"version": settings.commit_tag}, headers={"Cache-Control": "no-cache"})
 
     return fastapi
