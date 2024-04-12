@@ -1,3 +1,6 @@
+import json
+import typing as t
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -63,3 +66,39 @@ async def test_kafka_producer_fn():
     assert k.settings.kafka_brokers == "localhost:9092"
     k = kafka_producer.kafka_producer(get_test_settings(kafka_brokers="localhost:9093"))
     assert k.settings.kafka_brokers == "localhost:9093"
+
+
+async def test_custom_encoder():
+    k = kafka_producer.KafkaProducer(get_test_settings())
+
+    with patch("aiokafka.AIOKafkaProducer.start") as mock_start:
+        await k.start()
+        mock_start.assert_called_once()
+
+    class KafkaEncoder(json.JSONEncoder):
+        """
+        Custom JSON encodings for non-standard objects
+        """
+
+        def default(self, obj: t.Any) -> t.Any:
+            if isinstance(obj, uuid.UUID):
+                return str(obj)
+            return json.JSONEncoder.default(self, obj)
+
+    id = uuid.uuid4()
+    with pytest.raises(TypeError, match=r"Object of type UUID is not JSON serializable"):
+        await k.send("test", {"test": id})
+    with pytest.raises(TypeError, match=r"Object of type UUID is not JSON serializable"):
+        await k.send_nowait("test", {"test": id})
+
+    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+        await k.send("test", {"test": id}, encoder=KafkaEncoder)
+        mock_send.assert_called_once_with("test", f'{{"test": "{id}"}}'.encode(), timestamp_ms=None)
+
+    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+        await k.send_nowait("test", {"test": id}, encoder=KafkaEncoder)
+        mock_send.assert_called_once_with("test", f'{{"test": "{id}"}}'.encode(), timestamp_ms=None)
+
+    with patch("aiokafka.AIOKafkaProducer.stop"):
+        await k.stop()
+        mock_start.assert_called_once()
