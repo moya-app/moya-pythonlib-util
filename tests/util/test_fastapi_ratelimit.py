@@ -17,7 +17,7 @@ from moya.util.fastapi_ratelimit import (  # , MemLimiter
 from moya.util.ratelimit import MemLimiter, RedisLimiter
 
 
-async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]):
+async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str | None:
     """
     FastAPI hack for test user verification
     """
@@ -27,7 +27,10 @@ async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends
 async def test_basic_memlimiter(time_machine) -> None:
     with patch.dict(os.environ, {"APP_RATELIMITS": '{"test": {"per_minute": 2, "per_hour": 4}}'}):
         limiter = RateLimiter("test", Depends(ensure_verified), limiter_class=MemLimiter)
+        await do_tests(time_machine, limiter)
 
+        # Same, but with annotated user_id
+        limiter = RateLimiter("test", t.Annotated[str | None, Depends(ensure_verified)], limiter_class=MemLimiter)
         await do_tests(time_machine, limiter)
 
     # TODO: Test RateLimiterDep

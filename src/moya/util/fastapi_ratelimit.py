@@ -140,9 +140,11 @@ def RateLimiter(
     """
 
     settings = RateLimitSettings()
-    return _RateLimiter(
-        limiter_class(settings.get(name, default_limits), name), user_id_decorator=t.Annotated[str, user_id_decorator]
-    )
+    user_id_decorator = user_id_decorator
+    if t.get_origin(user_id_decorator) is not t.Annotated:
+        user_id_decorator = t.Annotated[str, user_id_decorator]
+
+    return _RateLimiter(limiter_class(settings.get(name, default_limits), name), user_id_decorator=user_id_decorator)
 
 
 def RateLimiterDep(
