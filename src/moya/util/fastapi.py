@@ -1,8 +1,8 @@
 import typing as t
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Response
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from pydantic import BaseModel, Field
 
 from moya.middleware.connection_stats import ConnectionStatsMiddleware
 from moya.util.config import MoyaSettings
@@ -11,6 +11,10 @@ from moya.util.config import MoyaSettings
 class FastAPISettings(MoyaSettings):
     commit_tag: str = "dev"
     hide_docs: bool = True
+
+
+class VersionResponse(BaseModel):
+    version: str = Field(examples=["1.2.9"])
 
 
 def setup_fastapi(**kwargs: t.Any) -> FastAPI:
@@ -28,8 +32,12 @@ def setup_fastapi(**kwargs: t.Any) -> FastAPI:
     FastAPIInstrumentor.instrument_app(fastapi)
 
     # Add in standard endpoints so the app doesn't have to
-    @fastapi.get("/version")
-    async def version() -> JSONResponse:
-        return JSONResponse({"version": settings.commit_tag}, headers={"Cache-Control": "no-cache"})
+    @fastapi.get("/version", tags=["Meta"])
+    async def version(response: Response) -> VersionResponse:
+        """
+        Return the version of this service in JSON format
+        """
+        response.headers["Cache-Control"] = "no-cache"
+        return VersionResponse(version=settings.commit_tag)
 
     return fastapi
