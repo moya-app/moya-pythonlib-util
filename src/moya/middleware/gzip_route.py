@@ -36,6 +36,10 @@ class GzipRoute(APIRoute):
     FastAPI route that decompresses inbound gzip or brotli requests. Usage:
 
     router = APIRouter(prefix="/v1/requests", route_class=GzipRoute)
+
+    Note that this does not propagate to sub-routers so has to be specified on
+    the router which your endpoints requiring this functionality are defined
+    on.
     """
 
     def get_route_handler(self) -> Callable:
