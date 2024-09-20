@@ -27,6 +27,11 @@ def setup_fastapi(**kwargs: t.Any) -> FastAPI:
     kwargs["version"] = settings.commit_tag
     kwargs["openapi_url"] = None if settings.hide_docs else "/openapi.json"
 
+    # According to the fastapi docs, this should auto-populate but per
+    # https://github.com/fastapi/fastapi/discussions/12226 it does not.
+    if "servers" not in kwargs:
+        kwargs["servers"] = [{"url": "/"}]
+
     fastapi = FastAPI(**kwargs)
     fastapi.add_middleware(ConnectionStatsMiddleware)
     FastAPIInstrumentor.instrument_app(fastapi)
