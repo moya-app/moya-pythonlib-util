@@ -17,7 +17,7 @@ class VersionResponse(BaseModel):
     version: str = Field(examples=["1.2.9"])
 
 
-def setup_fastapi(**kwargs: t.Any) -> FastAPI:
+def setup_fastapi(openapi_tags: list[dict] = [], **kwargs: t.Any) -> FastAPI:
     """
     Return a preconfigured FastAPI app with standard endpoints and OTEL
     tracking.
@@ -32,7 +32,10 @@ def setup_fastapi(**kwargs: t.Any) -> FastAPI:
     if "servers" not in kwargs:
         kwargs["servers"] = [{"url": "/"}]
 
-    fastapi = FastAPI(**kwargs)
+    if not any(d["name"] == "Meta" for d in openapi_tags):
+        openapi_tags.append({"name": "Meta", "description": "endpoints for health checks and other meta operations"})
+
+    fastapi = FastAPI(openapi_tags=openapi_tags, **kwargs)
     fastapi.add_middleware(ConnectionStatsMiddleware)
     FastAPIInstrumentor.instrument_app(fastapi)
 
