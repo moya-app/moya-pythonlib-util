@@ -75,7 +75,7 @@ def set_cache_headers(
 
     if last_modified:
         if isinstance(last_modified, (int, float)):
-            last_modified = datetime.utcfromtimestamp(last_modified)
+            last_modified = datetime.fromtimestamp(last_modified, timezone.utc)
         if isinstance(last_modified, datetime):
             if last_modified.tzinfo is None:
                 last_modified = last_modified.astimezone(timezone.utc)
