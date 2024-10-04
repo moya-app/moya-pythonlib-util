@@ -1,5 +1,6 @@
 import typing as t
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -17,7 +18,10 @@ from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_head
         1708079858,
         1708079858.2,
         datetime(2024, 2, 16, 10, 37, 38, tzinfo=timezone.utc),
-        # TODO if no timezone I suppose it should convert to UTC from that timezone (with appropriate time shift)
+        datetime(2024, 2, 16, 12, 37, 38, tzinfo=ZoneInfo("Africa/Johannesburg")),
+        # TODO if no timezone I suppose it should convert to UTC from that
+        # timezone (with appropriate time shift); this test depends on us
+        # faking the system current timezone though
         # datetime(2024, 2, 16, 10, 37, 38),  # no explicit timezone
     ],
 )
