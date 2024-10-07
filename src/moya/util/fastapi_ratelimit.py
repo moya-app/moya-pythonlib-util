@@ -22,7 +22,7 @@ class RateLimitSettings(MoyaSettings):
 
     ratelimits: dict[str, RateLimit]
 
-    def get(self, endpoint: str, default: RateLimit = None) -> RateLimit:
+    def get(self, endpoint: str, default: RateLimit | None = None) -> RateLimit:
         """
         Get the ratelimiter for the given endpoint name, if exists
         """

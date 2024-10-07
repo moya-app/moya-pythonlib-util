@@ -13,10 +13,10 @@ Generic ratelimit-related stuff, should have no FastAPI dependencies
 
 
 class RateLimit(BaseModel):
-    per_second: int = None
-    per_minute: int = None
-    per_hour: int = None
-    per_day: int = None
+    per_second: int | None = None
+    per_minute: int | None = None
+    per_hour: int | None = None
+    per_day: int | None = None
 
     class Config:
         keep_untouched = (cached_property,)

@@ -21,7 +21,7 @@ class KafkaSettings(MoyaSettings):
     kafka_password: str
     kafka_brokers: str
 
-    def as_kafka(self) -> dict:
+    def as_kafka(self) -> dict[str, t.Any]:
         "Return settings as a dict suitable for passing to aiokafka"
 
         return {
@@ -39,7 +39,7 @@ class KafkaBase:
     def __init__(self, settings: KafkaSettings, startup_timeout: int = 20) -> None:
         self.startup_timeout = startup_timeout
         self.settings = settings
-        self.started: asyncio.Future[bool] = None
+        self.started: asyncio.Future[bool] | None = None
         self.kafka: t.Any = None  # should be AIOKafkaProducer or AIOKafkaConsumer
 
     async def start(self) -> None:

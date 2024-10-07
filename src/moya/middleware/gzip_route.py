@@ -1,7 +1,7 @@
 # TODO: We should rename this to inbound_compression or similar because it
 # handles more than just gzip now.
 import zlib
-from typing import Callable
+from typing import Any, Callable, Coroutine
 
 import brotli
 from fastapi import Response
@@ -42,7 +42,7 @@ class GzipRoute(APIRoute):
     on.
     """
 
-    def get_route_handler(self) -> Callable:
+    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:

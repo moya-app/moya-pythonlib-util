@@ -17,7 +17,7 @@ class VersionResponse(BaseModel):
     version: str = Field(examples=["1.2.9"])
 
 
-def setup_fastapi(openapi_tags: list[dict] = [], **kwargs: t.Any) -> FastAPI:
+def setup_fastapi(openapi_tags: list[dict[str, str]] = [], **kwargs: t.Any) -> FastAPI:
     """
     Return a preconfigured FastAPI app with standard endpoints and OTEL
     tracking.

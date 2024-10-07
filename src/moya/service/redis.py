@@ -68,7 +68,7 @@ def _standard_connection_kwargs(settings: RedisSettings, decode_responses: bool 
     Return a dict of standard connection kwargs for all redis pools
     """
     # Retry only applies to trying to get a connection, not if an individual connection times out.
-    retry = Retry(ExponentialBackoff(), settings.redis_connect_retries)
+    retry = Retry(ExponentialBackoff(), settings.redis_connect_retries)  # type: ignore
     return {
         "encoding": "utf-8",
         "decode_responses": decode_responses,
@@ -83,7 +83,7 @@ def _standard_connection_kwargs(settings: RedisSettings, decode_responses: bool 
 @cache
 def sentinel(settings: RedisSettings, **kwargs: t.Any) -> aioredis.sentinel.Sentinel:
     "Create a redis sentinel client"
-    return aioredis.sentinel.Sentinel(
+    return aioredis.sentinel.Sentinel(  # type: ignore
         settings.redis_sentinel_hosts,
         **_standard_connection_kwargs(settings, **kwargs),
         sentinel_kwargs={
@@ -96,12 +96,14 @@ def sentinel(settings: RedisSettings, **kwargs: t.Any) -> aioredis.sentinel.Sent
 @cache
 def pool(settings: RedisSettings, **kwargs: t.Any) -> aioredis.ConnectionPool:
     "Create a redis connection pool"
+    if not settings.redis_url:
+        raise ValueError("Redis URL is not set")
     return aioredis.ConnectionPool.from_url(settings.redis_url, **_standard_connection_kwargs(settings, **kwargs))
 
 
 @asynccontextmanager
 async def redis(
-    readonly: bool = False, settings: RedisSettings = None, **kwargs: t.Any
+    readonly: bool = False, settings: RedisSettings | None = None, **kwargs: t.Any
 ) -> t.AsyncGenerator[aioredis.Redis, None]:
     """
     Return a redis connection from the pool, and close it correctly when
@@ -143,7 +145,7 @@ async def redis(
     await conn.aclose()
 
 
-Result = t.TypeVar("Result")
+Result = t.Any
 
 
 async def redis_try_run(
@@ -180,7 +182,7 @@ CachedFunc = t.Callable[..., t.Awaitable[Result]]
 
 
 class RedisCached:
-    def __init__(self, func: CachedFunc, key: str, expiry: int = None, cache_none: bool = True) -> None:
+    def __init__(self, func: CachedFunc, key: str, expiry: int | None = None, cache_none: bool = True) -> None:
         self.func = func
         self.key = key
         self.expiry = expiry
@@ -198,7 +200,7 @@ class RedisCached:
 
         cached = await redis_try_run(fetch, readonly=True, decode_responses=False)
         if cached:
-            return t.cast(Result, cached)
+            return cached
 
         result = t.cast(Result, await self.func(*args, **kwargs))
         if result is None and not self.cache_none:
@@ -223,7 +225,9 @@ class RedisCached:
         await redis_try_run(delete)
 
 
-def redis_cached(key: str, expiry: int = None, cache_none: bool = True) -> t.Callable[[CachedFunc], RedisCached]:
+def redis_cached(
+    key: str, expiry: int | None = None, cache_none: bool = True
+) -> t.Callable[[CachedFunc], RedisCached]:
     """
     Decorator to cache the result of a function in redis
 

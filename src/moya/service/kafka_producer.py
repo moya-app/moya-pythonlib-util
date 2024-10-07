@@ -45,8 +45,12 @@ class KafkaProducer(KafkaBase):
         await super().start()
 
     async def send_nowait(
-        self, topic: str, payload: dict, timestamp_ms: int = None, encoder: t.Type[json.JSONEncoder] | None = None
-    ) -> asyncio.Future:  # [aiokafka.RecordMetadata]:
+        self,
+        topic: str,
+        payload: dict[str, t.Any],
+        timestamp_ms: int | None = None,
+        encoder: t.Type[json.JSONEncoder] | None = None,
+    ) -> asyncio.Future[t.Any]:  # [aiokafka.RecordMetadata]:
         """
         Send a message to kafka and return a future which will be resolved when
         the message send has been completed
@@ -63,10 +67,14 @@ class KafkaProducer(KafkaBase):
 
         fut = await self.kafka.send(topic, json.dumps(payload, cls=encoder).encode("utf-8"), timestamp_ms=timestamp_ms)
         # return t.cast(asyncio.Future[aiokafka.RecordMetadata], fut)
-        return t.cast(asyncio.Future, fut)
+        return t.cast(asyncio.Future[t.Any], fut)
 
     async def send(
-        self, topic: str, payload: dict, timestamp_ms: int = None, encoder: t.Type[json.JSONEncoder] | None = None
+        self,
+        topic: str,
+        payload: dict[str, t.Any],
+        timestamp_ms: int | None = None,
+        encoder: t.Type[json.JSONEncoder] | None = None,
     ) -> t.Any:  # aiokafka.RecordMetadata:
         """
         Send a message to kafka and wait for it to successfully complete. This
@@ -79,7 +87,7 @@ class KafkaProducer(KafkaBase):
 
 
 @cache
-def kafka_producer(settings: KafkaSettings = None) -> KafkaProducer:
+def kafka_producer(settings: KafkaSettings | None = None) -> KafkaProducer:
     if settings is None:
         settings = KafkaSettings()
     return KafkaProducer(settings)

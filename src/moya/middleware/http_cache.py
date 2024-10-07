@@ -43,8 +43,8 @@ class IfModifiedSinceMiddleware(BaseHTTPMiddleware):
 def set_cache_headers(
     request: Request,
     response: Response,
-    last_modified: str | int | float | datetime = None,
-    max_age: int = None,
+    last_modified: str | int | float | datetime | None = None,
+    max_age: int | None = None,
     stale_if_error: int = 60 * 60,
     public: bool = True,
     skip_if_not_modified: bool = True,

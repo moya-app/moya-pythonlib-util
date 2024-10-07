@@ -16,7 +16,7 @@ async def random_key():
     yield f"test:{uuid.uuid4()}"
 
 
-def reset_redis_caches():
+def reset_redis_caches() -> None:
     # Clear @cache'd values in our the redis library. Must be done when
     # environment variables change so that new config is picked up.
     r.pool.cache_clear()

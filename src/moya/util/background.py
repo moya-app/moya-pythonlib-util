@@ -1,11 +1,11 @@
 import asyncio
 import logging
-from typing import Awaitable
+from typing import Any, Awaitable
 
 bg_logger = logging.getLogger("background-tasks")
 
 
-async def background_task_wrapper(task: Awaitable) -> None:
+async def background_task_wrapper(task: Awaitable[Any]) -> None:
     """
     Run the given task logging exceptions to sentry
     """
@@ -15,7 +15,7 @@ async def background_task_wrapper(task: Awaitable) -> None:
         bg_logger.exception("Exception in background task", exc_info=e)
 
 
-async def run_in_background(task: Awaitable) -> None:
+async def run_in_background(task: Awaitable[Any]) -> None:
     """
     Run a task in the background returning immediately, logging exceptions if
     they occur.

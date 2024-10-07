@@ -34,12 +34,14 @@ async def test_basics() -> None:
     client = httpx.AsyncClient(app=app, base_url="http://test")
     await client.get("/item")
     attrs = spans.get_finished_spans()[-1].attributes
+    assert attrs
     assert attrs["http.server_name"] == "test", "Should have come from fastapi otel instrumentation"
     assert attrs["bytes.rx"] == 0
     assert attrs["bytes.tx"] == 14
     spans.clear()
     await client.post("/item", json={"name": "Bar"})
     attrs = spans.get_finished_spans()[-1].attributes
+    assert attrs
     assert attrs["http.server_name"] == "test", "Should have come from fastapi otel instrumentation"
     assert attrs["bytes.rx"] == 15
     assert attrs["bytes.tx"] == 14

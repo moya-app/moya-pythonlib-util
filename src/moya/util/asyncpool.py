@@ -48,11 +48,8 @@ async def asyncpool(
                 await enqueue(i)
     """
 
-    queue: asyncio.Queue = asyncio.Queue(maxsize=maxsize)
-    workers: t.List[asyncio.Task] = []
-
-    for i in range(worker_count):
-        workers.append(asyncio.create_task(_run_worker(queue, fn)))
+    queue: asyncio.Queue[T] = asyncio.Queue(maxsize=maxsize)
+    workers = [asyncio.create_task(_run_worker(queue, fn)) for _ in range(worker_count)]
 
     try:
         yield queue.put
