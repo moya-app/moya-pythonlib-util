@@ -16,6 +16,9 @@ extras_require = {
         "types-cachetools==5.3.0.7",
         "time-machine==2.13.0",
     ],
+    "beartype": [
+        "beartype==0.19.0",
+    ],
     "kafka": [
         "aiokafka[lz4]>=0.9.0",
     ],
