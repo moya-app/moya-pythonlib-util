@@ -33,7 +33,7 @@ extras_require = {
         "pydantic-settings>=2.0.0,<3.0.0",
     ],
     "fastapi": [
-        "fastapi>=0.95.0",
+        "fastapi>=0.115.0",
         "typing-extensions>=4.8.0",
         "sentry-sdk[fastapi]",
         "opentelemetry-instrumentation-fastapi",
