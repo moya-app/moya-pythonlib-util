@@ -145,7 +145,7 @@ async def redis(
     await conn.aclose()
 
 
-Result = t.Any
+Result = t.TypeVar("Result")
 
 
 async def redis_try_run(
@@ -178,11 +178,10 @@ async def redis_try_run(
         return None
 
 
-CachedFunc = t.Callable[..., t.Awaitable[Result]]
-
-
 class RedisCached:
-    def __init__(self, func: CachedFunc, key: str, expiry: int | None = None, cache_none: bool = True) -> None:
+    def __init__(
+        self, func: t.Callable[..., t.Awaitable[Result]], key: str, expiry: int | None = None, cache_none: bool = True
+    ) -> None:
         self.func = func
         self.key = key
         self.expiry = expiry
@@ -192,19 +191,23 @@ class RedisCached:
         return f"pickle:{self.key}:{args}:{kwargs}"
 
     async def __call__(self, *args: t.Any, **kwargs: t.Any) -> Result:
-        async def fetch(redis_conn: Redis) -> t.Any:
+        async def fetch(redis_conn: Redis) -> Result | None:
             data = await redis_conn.get(self.get_cache_key(args, kwargs))
             if data:
-                return pickle.loads(data)
+                return t.cast(Result, pickle.loads(data))
             return None
 
         cached = await redis_try_run(fetch, readonly=True, decode_responses=False)
         if cached:
             return cached
 
-        result = t.cast(Result, await self.func(*args, **kwargs))
-        if result is None and not self.cache_none:
-            return result
+        result = await self.func(*args, **kwargs)
+
+        # TypeVar of Result may include a return of None, or it may not - we
+        # don't know. MyPy thinks this statement in unreachable because it
+        # doesn't believe the return from here could be None though.
+        if result is None and not self.cache_none:  # type: ignore
+            return result  # type: ignore
 
         # Dump the result to a local variable as it would be saved to redis
         # here before the background task runs. There may be a race if the
@@ -227,7 +230,7 @@ class RedisCached:
 
 def redis_cached(
     key: str, expiry: int | None = None, cache_none: bool = True
-) -> t.Callable[[CachedFunc], RedisCached]:
+) -> t.Callable[[t.Callable[..., t.Awaitable[Result]]], RedisCached]:
     """
     Decorator to cache the result of a function in redis
 
@@ -241,3 +244,25 @@ def redis_cached(
         return RedisCached(func, key, expiry, cache_none=cache_none)
 
     return decorator
+
+
+def _mypy_test_fn() -> None:
+    """
+    Validation that @redis_cached wraps return type correctly. Cannot put in
+    test suite because that doesnt have the same level of checking as actual
+    code. Code not intended to ever be executed
+    """
+
+    @redis_cached(key="internal_test")
+    async def _test_cached() -> int:
+        return 1
+
+    async def foo() -> int:
+        return await _test_cached()
+
+    @redis_cached(key="internal_test2")
+    async def _test_cached2() -> int | None:
+        return None
+
+    async def foo2() -> int | None:
+        return await _test_cached2()
