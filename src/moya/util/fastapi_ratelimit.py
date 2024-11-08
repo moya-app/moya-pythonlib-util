@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 
 from fastapi import Depends, HTTPException, status
@@ -102,6 +103,9 @@ class _RateLimiter:
         return Depends(fn)
 
 
+_all_fastapi_ratelimiters = []
+
+
 def RateLimiter(
     name: str,
     user_id_decorator: t.Any,  # Must be a Depends() function which returns a str or None
@@ -144,7 +148,13 @@ def RateLimiter(
     if t.get_origin(user_id_decorator) is not t.Annotated:
         user_id_decorator = t.Annotated[str, user_id_decorator]
 
-    return _RateLimiter(limiter_class(settings.get(name, default_limits), name), user_id_decorator=user_id_decorator)
+    ratelimiter = _RateLimiter(
+        limiter_class(settings.get(name, default_limits), name), user_id_decorator=user_id_decorator
+    )
+    # TODO: I know this is hacky as it holds all references ever created. But with FastAPI this is probably
+    # reasonable to assume.
+    _all_fastapi_ratelimiters.append(ratelimiter)
+    return ratelimiter
 
 
 def RateLimiterDep(
@@ -166,3 +176,10 @@ def RateLimiterDep(
     return RateLimiter(
         name, user_id_decorator=user_id_decorator, default_limits=default_limits, limiter_class=limiter_class
     ).dependency
+
+
+async def reset_all_ratelimiters_for_user(user_id: str) -> None:
+    """
+    Reset all FastAPI ratelimiters for the given user
+    """
+    await asyncio.gather(*[ratelimiter.reset_user(user_id) for ratelimiter in _all_fastapi_ratelimiters])

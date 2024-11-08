@@ -9,10 +9,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 # from moya.service.redis import redis
 from httpx import AsyncClient
 
+import moya.util.fastapi_ratelimit as fastapi_ratelimit
 from moya.util.fastapi_ratelimit import (  # , MemLimiter
     RateLimit,
     RateLimiter,
     RateLimiterDep,
+    reset_all_ratelimiters_for_user,
 )
 from moya.util.ratelimit import MemLimiter, RedisLimiter
 
@@ -32,8 +34,6 @@ async def test_basic_memlimiter(time_machine) -> None:
         # Same, but with annotated user_id
         limiter = RateLimiter("test", t.Annotated[str | None, Depends(ensure_verified)], limiter_class=MemLimiter)
         await do_tests(time_machine, limiter)
-
-    # TODO: Test RateLimiterDep
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ, reason="SENTINEL_HOSTS not specified")
@@ -177,3 +177,46 @@ async def do_tests(time_machine, limiter) -> None:
     for user in ("user1", "user2"):
         res = await tester.get("/7", auth=(user, "pass"))
         assert res.status_code == 200, "After a full reset, requests should be allowed again from all users"
+
+
+async def test_user_reset() -> None:
+    "Test resetting all ratelimiters for a user"
+    app = FastAPI()
+
+    # Reset because of different event loops in test suite
+    fastapi_ratelimit._all_fastapi_ratelimiters = []
+
+    with patch.dict(os.environ, {"APP_RATELIMITS": '{"*": {"per_minute": 2, "per_hour": 4}}'}):
+
+        @app.get("/1", dependencies=[RateLimiterDep("test1", Depends(ensure_verified), limiter_class=MemLimiter)])
+        async def api_1() -> None:
+            pass
+
+        @app.get("/2", dependencies=[RateLimiterDep("test2", Depends(ensure_verified), limiter_class=MemLimiter)])
+        async def api_2() -> None:
+            pass
+
+        @app.get("/3", dependencies=[RateLimiterDep("test3", Depends(ensure_verified), limiter_class=MemLimiter)])
+        async def api_3() -> None:
+            pass
+
+    tester = AsyncClient(app=app, base_url="http://test")
+
+    # Block two users from multiple endpoints
+    for endpoint in ("/1", "/2", "/3"):
+        for user in ("user1", "user2"):
+            for i in range(2):
+                await tester.get(endpoint, auth=(user, "pass"))
+
+            res = await tester.get(endpoint, auth=(user, "pass"))
+            assert res.status_code == 429, f"Should be blocked now on {endpoint} for user {user}"
+
+    # Do a full reset for user1
+    await reset_all_ratelimiters_for_user("user1")
+
+    for endpoint in ("/1", "/2", "/3"):
+        res = await tester.get(endpoint, auth=("user1", "pass"))
+        assert res.status_code == 200, f"Should be unblocked now on all endpoints {endpoint} for user1"
+
+        res = await tester.get(endpoint, auth=("user2", "pass"))
+        assert res.status_code == 429, f"Should still be blocked on all endpoints {endpoint} for user2"

@@ -112,7 +112,7 @@ class MemLimiter(LimitBase):
         cur_limits.append(now)
 
     async def flush_user(self, user_id: str) -> None:
-        del self._limits[self.key(user_id)]
+        self._limits.pop(self.key(user_id), None)
 
     def _reset(self) -> None:
         # Ordered list of timestamps for the given limit. Could set it to purge
