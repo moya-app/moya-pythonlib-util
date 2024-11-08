@@ -61,6 +61,8 @@ class ConnectionStatsMiddleware:
 
             body_size += len(message.get("body", b""))
             if not request_content_start:
+                # TODO: Should we try to decode the body according to the content-type? Otherwise may get
+                # "Byte attribute could not be decoded" error
                 request_content_start = message.get("body", b"")[0:1024]
 
             # print('rx', message)

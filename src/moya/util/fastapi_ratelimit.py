@@ -134,7 +134,7 @@ def RateLimiter(
     limiter = RateLimiter("foo", Depends(ensure_verified))
     @app.get("/foo", dependencies=[limiter.dependency])
     async def foo():
-        await limiter.flush_user("foo@bar.com")
+        await limiter.reset_user("foo@bar.com")
 
     and set APP_RATELIMITS='{"foo": {"per_minute": 10, "per_day": 20}}' in your environment
     """
