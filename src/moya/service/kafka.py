@@ -1,10 +1,12 @@
 import asyncio
 import logging
 import typing as t
+from contextlib import asynccontextmanager
 
 import aiokafka
 from aiokafka.helpers import create_ssl_context
 
+from moya.util.background import run_in_background
 from moya.util.config import MoyaSettings
 
 logger = logging.getLogger("kafka")
@@ -61,3 +63,14 @@ class KafkaBase:
     async def stop(self) -> None:
         if self.started and self.started.done():
             await self.kafka.stop()
+
+    @asynccontextmanager
+    async def run(self) -> t.AsyncGenerator[None, None]:
+        """
+        Context manager to easily run the kafka producer in the background and handle shutdown correctly.
+        """
+        await run_in_background(self.start())
+        try:
+            yield
+        finally:
+            await self.stop()

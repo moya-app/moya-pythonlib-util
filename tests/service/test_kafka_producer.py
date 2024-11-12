@@ -6,6 +6,9 @@ from unittest.mock import patch
 import pytest
 
 import moya.service.kafka_producer as kafka_producer
+from moya.util.background import never_run_in_background
+
+never_run_in_background(True)
 
 
 def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
@@ -56,9 +59,17 @@ async def test_kafka_producer_library():
         await k.send_nowait("test", {"test": "test"})
         mock_send.assert_called_once_with("test", b'{"test": "test"}', timestamp_ms=None)
 
-    with patch("aiokafka.AIOKafkaProducer.stop"):
+    with patch("aiokafka.AIOKafkaProducer.stop") as mock_stop:
         await k.stop()
-        mock_start.assert_called_once()
+        mock_stop.assert_called_once()
+
+    # Check the new context manager functionality
+    with patch("aiokafka.AIOKafkaProducer.start") as mock_start, patch("aiokafka.AIOKafkaProducer.stop") as mock_stop:
+        async with k.run():
+            mock_start.assert_called_once()
+            mock_stop.assert_not_called()
+
+        mock_stop.assert_called_once()
 
 
 async def test_kafka_producer_fn():

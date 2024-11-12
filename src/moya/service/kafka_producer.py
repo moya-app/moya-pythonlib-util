@@ -18,14 +18,12 @@ class KafkaProducer(KafkaBase):
     import typing as t
     from contextlib import asynccontextmanager
     from moya.service.kafka import kafka_producer
+    from moya.util.background import run_in_background
 
     @asynccontextmanager
     async def fastapi_lifespan(app: FastAPI) -> t.AsyncGenerator[None, None]:
-        asyncio.ensure_future(kafka_producer().start())
-
-        yield
-
-        await kafka_producer().stop()
+        async with kafka_producer().run():
+            yield
 
     app = FastAPI(..., lifespan=fastapi_lifespan)
 
