@@ -23,11 +23,14 @@ class KafkaSettings(MoyaSettings):
     kafka_password: str
     kafka_brokers: str
 
+    kafka_producer_linger_ms: int = 200  # 200ms batches to improve send performance (producer-only)
+
     def as_kafka(self) -> dict[str, t.Any]:
         "Return settings as a dict suitable for passing to aiokafka"
 
         return {
             "bootstrap_servers": self.kafka_brokers,
+            "linger_ms": self.kafka_producer_linger_ms,
             # AWS requires SASL auth via the below
             "sasl_mechanism": self.kafka_sasl_mechanism,
             "security_protocol": self.kafka_security_protocol,

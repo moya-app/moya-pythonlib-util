@@ -37,7 +37,6 @@ class KafkaProducer(KafkaBase):
         self.kafka = aiokafka.AIOKafkaProducer(
             **self.settings.as_kafka(),
             # Producer optimizations
-            linger_ms=200,  # 200ms batches to improve send performance
             compression_type="lz4",
         )
         await super().start()
