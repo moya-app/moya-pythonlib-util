@@ -1,16 +1,69 @@
 [project]
 name = "moya-pythonlib-util"
-version = "0.4.0"
-description = "Moya Python Utils"
+version = "0.9.0"
+description = "Moya Python Util Library"
 readme = "README.md"
 requires-python = ">=3.10"
-dynamic = ["dependencies", "optional-dependencies"]
 authors = [
     { name = "Mark Zealey", email = "mark.zealey@moya.app" }
 ]
 maintainers = [
     { name = "Mark Zealey", email = "mark.zealey@moya.app" }
 ]
+
+dependencies = [
+    "sentry-sdk>=2.8.0,<3.0.0",
+    "opentelemetry-distro",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==23.3.0",
+    "flake8==6.1.0",
+    "Flake8-pyproject==1.2.3",
+    "isort==5.12.0",
+    "mypy==1.8.0",
+    "poethepoet==0.22.0",
+    "pytest-asyncio==0.21.0",
+    "pytest-cov==4.1.0",
+    "pytest-subtests==0.11.0",
+    "pytest==7.1.3",
+    "respx==0.20.2",
+    "types-cachetools==5.3.0.7",
+    "time-machine==2.16.0",
+]
+beartype = [
+    "beartype==0.19.0",
+]
+kafka = [
+    "aiokafka[lz4]>=0.9.0",
+]
+redis = [
+    "redis==5.0.1",
+]
+pydantic-v1 = [
+    "pydantic>=1.10.0,<2.0.0",
+]
+pydantic-v2 = [
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+]
+fastapi = [
+    "fastapi>=0.115.0",
+    "typing-extensions>=4.8.0",
+    "sentry-sdk[fastapi]",
+    "opentelemetry-instrumentation-fastapi",
+    "brotli==1.1.0",
+]
+# List all optional deps here
+all = [ "moya-pythonlib-util[beartype,kafka,redis,fastapi]" ]
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["moya.middleware", "moya.util", "moya.service"]
 
 [tool.black]
 line-length = 119
@@ -53,19 +106,16 @@ disallow_untyped_defs = false
 disallow_any_generics = false
 
 [tool.poe.tasks]
-test = "pytest . --cov=src --cov-report=term"
-"lint:flake8" = "flake8 src/ tests/"
-"lint:black" = "black --check --diff src/ tests/"
-"lint:mypy" = "mypy src/ tests/"
+test = "pytest . --cov=moya --cov-report=term"
+"lint:flake8" = "flake8 moya/ tests/"
+"lint:black" = "black --check --diff moya/ tests/"
+"lint:mypy" = "mypy moya/ tests/"
 lint = ["lint:flake8", "lint:black", "lint:mypy"]
-"fix:black" = "black src/ tests/"
-"fix:isort" = "isort src/ tests/"
+"fix:black" = "black moya/ tests/"
+"fix:isort" = "isort moya/ tests/"
 fix = ["fix:black", "fix:isort"]
 
 [tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-    "--strict-markers",
-]
+addopts = [ "--strict-markers" ]
 asyncio_mode = "auto"
-pythonpath = [ "src" ]
+pythonpath = [ "." ]
