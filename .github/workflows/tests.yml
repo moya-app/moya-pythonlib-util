@@ -4,12 +4,13 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         pydantic-version: ["v1", "v2"]
+        builder: ["buildjet-2vcpu-ubuntu-2204", "buildjet-2vcpu-ubuntu-2204-arm"]
 
+    runs-on: ${{ matrix.builder }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
