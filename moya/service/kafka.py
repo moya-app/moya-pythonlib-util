@@ -45,7 +45,7 @@ class KafkaBase:
         self.startup_timeout = startup_timeout
         self.settings = settings
         self.started: asyncio.Future[bool] | None = None
-        self.kafka: t.Any = None  # should be AIOKafkaProducer or AIOKafkaConsumer
+        self.kafka: t.Any = None  # aiokafka.AIOKafkaConsumer | aiokafka.AIOKafkaProducer | None = None
 
     async def start(self) -> None:
         self.started = asyncio.get_running_loop().create_future()
@@ -66,13 +66,15 @@ class KafkaBase:
     async def stop(self) -> None:
         if self.started and self.started.done():
             await self.kafka.stop()
+            self.started = None
+            self.kafka = None
 
     @asynccontextmanager
-    async def run(self) -> t.AsyncGenerator[None, None]:
+    async def run(self, **kwargs: t.Any) -> t.AsyncIterator[None]:
         """
         Context manager to easily run the kafka producer in the background and handle shutdown correctly.
         """
-        await run_in_background(self.start())
+        await run_in_background(self.start(**kwargs))
         try:
             yield
         finally:
