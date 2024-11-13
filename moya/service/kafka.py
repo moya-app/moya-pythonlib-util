@@ -41,11 +41,12 @@ class KafkaSettings(MoyaSettings):
 
 
 class KafkaBase:
+    kafka: t.Any  # aiokafka.AIOKafkaConsumer | aiokafka.AIOKafkaProducer
+
     def __init__(self, settings: KafkaSettings, startup_timeout: int = 20) -> None:
         self.startup_timeout = startup_timeout
         self.settings = settings
         self.started: asyncio.Future[bool] | None = None
-        self.kafka: t.Any = None  # aiokafka.AIOKafkaConsumer | aiokafka.AIOKafkaProducer | None = None
 
     async def start(self) -> None:
         self.started = asyncio.get_running_loop().create_future()
@@ -67,7 +68,6 @@ class KafkaBase:
         if self.started and self.started.done():
             await self.kafka.stop()
             self.started = None
-            self.kafka = None
 
     @asynccontextmanager
     async def run(self, **kwargs: t.Any) -> t.AsyncIterator[None]:
