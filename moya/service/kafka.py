@@ -30,13 +30,18 @@ class KafkaSettings(MoyaSettings):
 
         return {
             "bootstrap_servers": self.kafka_brokers,
-            "linger_ms": self.kafka_producer_linger_ms,
             # AWS requires SASL auth via the below
             "sasl_mechanism": self.kafka_sasl_mechanism,
             "security_protocol": self.kafka_security_protocol,
             "sasl_plain_username": self.kafka_username,
             "sasl_plain_password": self.kafka_password,
             "ssl_context": create_ssl_context(),
+        }
+
+    def as_kafka_producer(self) -> dict[str, t.Any]:
+        return {
+            **self.as_kafka(),
+            "linger_ms": self.kafka_producer_linger_ms,
         }
 
 
