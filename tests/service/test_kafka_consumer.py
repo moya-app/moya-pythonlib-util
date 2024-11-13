@@ -1,9 +1,4 @@
-import json
-import typing as t
-import uuid
 from unittest.mock import patch
-
-import pytest
 
 from moya.service.kafka_consumer import KafkaConsumer, KafkaSettings
 from moya.util.background import never_run_in_background
