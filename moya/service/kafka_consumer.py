@@ -1,3 +1,4 @@
+import asyncio
 import json
 import typing as t
 
@@ -9,6 +10,23 @@ from .kafka import KafkaBase, KafkaSettings
 class KafkaConsumer(KafkaBase):
     """
     Basic Kafka Consumer - we don't use it in many places so not as sophisticated as the producer code.
+
+    Usage:
+
+    import asyncio
+    from moya.service.kafka_consumer import KafkaConsumer, KafkaSettings
+
+    KAFKA_CONSUMER_GROUP = "cg"
+    async def main():
+        consumer = KafkaConsumer(
+            KafkaSettings(),
+            KAFKA_CONSUMER_GROUP,
+            ["topic1", "topic2"],
+        )
+        async with consumer.run():
+            record = await consumer.getone()
+
+    asyncio.run(main())
     """
 
     def __init__(
@@ -37,6 +55,14 @@ class KafkaConsumer(KafkaBase):
         await super()._initialize()
 
     async def getone(self) -> t.Any:  # ConsumerRecord:
+        if not self.started:
+            raise Exception("Kafka consumer not started")
+        if not self.started.done():
+            try:
+                await asyncio.wait_for(self.started, timeout=self.startup_timeout)
+            except asyncio.TimeoutError:
+                raise Exception("Kafka consumer not started")
+
         return await self.kafka.getone()
 
     async def __anext__(self) -> t.Any:  # ConsumerRecord:
