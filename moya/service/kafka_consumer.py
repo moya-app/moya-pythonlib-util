@@ -21,13 +21,20 @@ class KafkaConsumer(KafkaBase):
         **kwargs: t.Any,
     ) -> None:
         super().__init__(settings, startup_timeout)
+        self.group = group
+        self.topics = topics
+        self.value_deserializer = value_deserializer
+        self.kafka_extra_kwargs = kwargs
+
+    async def _initialize(self) -> None:
         self.kafka = AIOKafkaConsumer(
-            *topics,
+            *self.topics,
             **self.settings.as_kafka(),
-            **kwargs,
-            group_id=group,
-            value_deserializer=lambda msg: json.loads(msg),
+            **self.kafka_extra_kwargs,
+            group_id=self.group,
+            value_deserializer=self.value_deserializer,
         )
+        await super()._initialize()
 
     async def getone(self) -> t.Any:  # ConsumerRecord:
         return await self.kafka.getone()

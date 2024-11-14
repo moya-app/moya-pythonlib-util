@@ -52,9 +52,23 @@ class KafkaBase:
         self.startup_timeout = startup_timeout
         self.settings = settings
         self.started: asyncio.Future[bool] | None = None
+        self.kafka = None
 
-    async def start(self) -> None:
+    async def _initialize(self) -> None:
+        """
+        Initialize the variables that require the current asyncio loop in order to work. Initializing aiokafka
+        secretly records the currently running async loop internally. If not in an async context it will blow
+        up, and when using pytest-asyncio it will break if used seveal times in different tests because a new
+        loop is created in various parts of the test suite.
+        """
         self.started = asyncio.get_running_loop().create_future()
+
+    async def _start(self) -> None:
+        """
+        Start the kafka consumer/producer. This may block while connecting so can be run in the (async)
+        background.
+        """
+        assert self.started is not None
 
         # Wait for kafka to start up and connect to it
         for i in range(self.startup_timeout):
@@ -69,17 +83,23 @@ class KafkaBase:
 
         raise Exception("Timeout connecting to Kafka")
 
+    async def start(self) -> None:
+        await self._initialize()
+        await self._start()
+
     async def stop(self) -> None:
         if self.started and self.started.done():
             await self.kafka.stop()
             self.started = None
 
     @asynccontextmanager
-    async def run(self, **kwargs: t.Any) -> t.AsyncIterator[None]:
+    async def run(self) -> t.AsyncIterator[None]:
         """
-        Context manager to easily run the kafka producer in the background and handle shutdown correctly.
+        Context manager to easily run the kafka producer, starting up in the background and shutting down
+        correctly.
         """
-        await run_in_background(self.start(**kwargs))
+        await self._initialize()
+        await run_in_background(self._start())
         try:
             yield
         finally:

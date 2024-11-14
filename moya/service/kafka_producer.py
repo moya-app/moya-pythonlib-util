@@ -35,11 +35,14 @@ class KafkaProducer(KafkaBase):
 
     def __init__(self, settings: KafkaSettings, startup_timeout: int = 20) -> None:
         super().__init__(settings, startup_timeout)
+
+    async def _initialize(self) -> None:
         self.kafka = aiokafka.AIOKafkaProducer(
             **self.settings.as_kafka_producer(),
             # Producer optimizations
             compression_type="lz4",
         )
+        await super()._initialize()
 
     async def send_nowait(
         self,
