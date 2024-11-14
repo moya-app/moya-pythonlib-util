@@ -35,7 +35,7 @@ class KafkaConsumer(KafkaBase):
         group: str,
         topics: list[str],
         startup_timeout: int = 20,
-        value_deserializer: t.Callable[[str], t.Any] = lambda msg: json.loads(msg),
+        value_deserializer: t.Callable[[str], t.Any] | None = lambda msg: json.loads(msg),
         **kwargs: t.Any,
     ) -> None:
         super().__init__(settings, startup_timeout)
