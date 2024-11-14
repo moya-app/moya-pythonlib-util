@@ -1,7 +1,9 @@
+import asyncio
 import json
 import typing as t
 import uuid
-from unittest.mock import patch
+from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -44,6 +46,17 @@ async def test_kafka_bad_connection(mock_sleep):
     await k.stop()
 
 
+@contextmanager
+def patch_kafka_send() -> t.Iterator[Mock]:
+    async def mock_send() -> asyncio.Future:
+        fut = asyncio.get_running_loop().create_future()
+        fut.set_result({})  # should be aiokafka.RecordMetadata
+        return fut
+
+    with patch("aiokafka.AIOKafkaProducer.send", return_value=mock_send()) as mocker:
+        yield mocker
+
+
 async def test_kafka_producer_library():
     k = kafka_producer.KafkaProducer(get_test_settings())
 
@@ -51,11 +64,11 @@ async def test_kafka_producer_library():
         await k.start()
         mock_start.assert_called_once()
 
-    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+    with patch_kafka_send() as mock_send:
         await k.send("test", {"test": "test"})
         mock_send.assert_called_once_with("test", b'{"test": "test"}', timestamp_ms=None)
 
-    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+    with patch_kafka_send() as mock_send:
         await k.send_nowait("test", {"test": "test"})
         mock_send.assert_called_once_with("test", b'{"test": "test"}', timestamp_ms=None)
 
@@ -102,11 +115,11 @@ async def test_custom_encoder():
     with pytest.raises(TypeError, match=r"Object of type UUID is not JSON serializable"):
         await k.send_nowait("test", {"test": id})
 
-    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+    with patch_kafka_send() as mock_send:
         await k.send("test", {"test": id}, encoder=KafkaEncoder)
         mock_send.assert_called_once_with("test", f'{{"test": "{id}"}}'.encode(), timestamp_ms=None)
 
-    with patch("aiokafka.AIOKafkaProducer.send") as mock_send:
+    with patch_kafka_send() as mock_send:
         await k.send_nowait("test", {"test": id}, encoder=KafkaEncoder)
         mock_send.assert_called_once_with("test", f'{{"test": "{id}"}}'.encode(), timestamp_ms=None)
 

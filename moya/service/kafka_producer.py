@@ -83,7 +83,7 @@ class KafkaProducer(KafkaBase):
 
         A custom encoder may also be specified to encode the payload.
         """
-        return await self.send_nowait(topic, payload, timestamp_ms, encoder)
+        return await (await self.send_nowait(topic, payload, timestamp_ms, encoder))
 
 
 @cache
