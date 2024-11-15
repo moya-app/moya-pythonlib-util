@@ -1,21 +1,32 @@
-version: "3.8"
-
 networks:
   overlay:
 
 services:
-  redis:
+  redis-master:
     image: redis:7.2.3
     command: ["sh", "-c", "rm -f /data/dump.rdb && redis-server --requirepass testpassword"]  # disable persistence
     init: true
     networks:
       - overlay
+  redis-slave:
+    image: redis:7.2.3
+    command: ["sh", "-c", "rm -f /data/dump.rdb && redis-server --requirepass testpassword --masterauth testpassword --replicaof 'redis-master 6379'"]  # disable persistence
+    init: true
+    depends_on:
+      - redis-master
+    networks:
+      - overlay
 
   redis-sentinel:
     image: bitnami/redis-sentinel:latest
+    depends_on:
+      - redis-master
+      - redis-slave
     environment:
-      - REDIS_MASTER_HOST=redis
+      - REDIS_MASTER_HOST=redis-master
       - REDIS_MASTER_PASSWORD=testpassword
       - REDIS_SENTINEL_PASSWORD=testpassword
     networks:
       - overlay
+    deploy:
+      replicas: 3

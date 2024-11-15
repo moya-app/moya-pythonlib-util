@@ -10,6 +10,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from httpx import AsyncClient
 
 import moya.util.fastapi_ratelimit as fastapi_ratelimit
+from moya.util.background import never_run_in_background
 from moya.util.fastapi_ratelimit import (  # , MemLimiter
     RateLimit,
     RateLimiter,
@@ -17,6 +18,8 @@ from moya.util.fastapi_ratelimit import (  # , MemLimiter
     reset_all_ratelimiters_for_user,
 )
 from moya.util.ratelimit import MemLimiter, RedisLimiter
+
+never_run_in_background(True)
 
 
 async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str | None:

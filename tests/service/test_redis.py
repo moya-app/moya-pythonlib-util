@@ -7,8 +7,13 @@ from unittest.mock import ANY, patch
 
 import pytest
 from pydantic import BaseModel
+from redis.asyncio.sentinel import MasterNotFoundError
+from redis.exceptions import ReadOnlyError
 
 import moya.service.redis as r
+from moya.util.background import never_run_in_background
+
+never_run_in_background(True)
 
 
 @asynccontextmanager
@@ -21,6 +26,7 @@ def reset_redis_caches() -> None:
     # environment variables change so that new config is picked up.
     r.pool.cache_clear()
     r.sentinel.cache_clear()
+    r.sentinel_pool.cache_clear()
     r.redis_settings.cache_clear()
 
 
@@ -79,27 +85,43 @@ def test_settings():
     "SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env"
 )
 async def test_redis(subtests) -> None:
-    for config in [
-        {"APP_REDIS_URL": os.environ["REDIS_URL"]},
-        {"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]},
+    for config, readonly_enforced, writeable in [
+        [{"APP_REDIS_URL": os.environ["REDIS_URL"]}, False, True],
+        [{"APP_REDIS_URL": os.environ["REDIS_SLAVE_URL"]}, True, False],
+        [{"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]}, True, True],
     ]:
-        with fake_redis_config(config):
+        with fake_redis_config(t.cast(dict[str, str], config)):
             for readonly in (True, False):
-                with subtests.test(f"redis() {config} readonly={readonly}"):
-                    async with r.redis(readonly) as redis_conn, random_key() as key:
-                        ok = await redis_conn.set(key, "value")
-                        assert ok, "Should have been able to set redis key"
-                        assert await redis_conn.get(key) == "value", "Should have been able to get redis key"
+                if readonly and readonly_enforced or not writeable:
+                    with subtests.test(f"redis() {config} readonly={readonly}"):
+                        with pytest.raises(ReadOnlyError):
+                            async with r.redis(readonly) as redis_conn, random_key() as key:
+                                await redis_conn.set(key, "value")
 
-                with subtests.test(f"redis_try_run() {config} readonly={readonly}"):
+                    with subtests.test(f"redis_try_run() {config} readonly={readonly}"):
 
-                    async def runner(redis_conn) -> None:
-                        async with random_key() as key:
+                        async def runner(redis_conn) -> None:
+                            with pytest.raises(ReadOnlyError):
+                                async with random_key() as key:
+                                    await redis_conn.set(key, "value")
+
+                        await r.redis_try_run(runner, readonly=readonly)
+                else:
+                    with subtests.test(f"redis() {config} readonly={readonly}"):
+                        async with r.redis(readonly) as redis_conn, random_key() as key:
                             ok = await redis_conn.set(key, "value")
                             assert ok, "Should have been able to set redis key"
                             assert await redis_conn.get(key) == "value", "Should have been able to get redis key"
 
-                    await r.redis_try_run(runner, readonly=readonly)
+                    with subtests.test(f"redis_try_run() {config} readonly={readonly}"):
+
+                        async def runner(redis_conn) -> None:
+                            async with random_key() as key:
+                                ok = await redis_conn.set(key, "value")
+                                assert ok, "Should have been able to set redis key"
+                                assert await redis_conn.get(key) == "value", "Should have been able to get redis key"
+
+                        await r.redis_try_run(runner, readonly=readonly)
 
 
 async def test_redis_bad_host(subtests):
@@ -114,7 +136,7 @@ async def test_redis_bad_host(subtests):
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
         with fake_redis_config(config):
             s = r.redis_settings()
-            with subtests.test(f"redis({s})"), pytest.raises(r.ConnectionError if s.is_sentinel else r.TimeoutError):
+            with subtests.test(f"redis({s})"), pytest.raises(MasterNotFoundError if s.is_sentinel else r.TimeoutError):
                 async with r.redis() as redis_conn:
                     # Need some redis activity to trigger the connection attempt
                     await redis_conn.get("test")

@@ -7,6 +7,12 @@ from functools import cache
 import redis.asyncio as aioredis
 from pydantic import validator
 from redis.asyncio import Redis  # noqa: F401 for reexport
+from redis.asyncio.connection import SSLConnection
+from redis.asyncio.sentinel import (
+    SentinelConnectionPool,
+    SentinelManagedConnection,
+    SlaveNotFoundError,
+)
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import (  # noqa: F401 for reexport
     ConnectionError,
@@ -19,6 +25,31 @@ from moya.util.background import run_in_background
 from moya.util.config import MoyaSettings
 
 logger = logging.getLogger("moya-redis")
+
+
+class MoyaSentinelManagedConnection(SentinelManagedConnection):
+    """
+    Patched version of SentinelManagedConnection that handles connection timeouts also.
+    """
+
+    async def _connect_retry(self):  # type: ignore
+        if self._reader:
+            return  # already connected
+        if self.connection_pool.is_master:
+            await self.connect_to(await self.connection_pool.get_master_address())
+        else:
+            async for slave in self.connection_pool.rotate_slaves():
+                # print(f"Trying slave {slave}")
+                try:
+                    return await self.connect_to(slave)
+                except (TimeoutError, ConnectionError):
+                    continue
+
+            raise SlaveNotFoundError  # Never be here
+
+
+class MoyaSentinelManagedSSLConnection(SentinelManagedConnection, SSLConnection):
+    pass
 
 
 class RedisSettings(MoyaSettings):
@@ -80,16 +111,38 @@ def _standard_connection_kwargs(settings: RedisSettings, decode_responses: bool 
     }
 
 
+def _sentinel_connection_kwargs(settings: RedisSettings, **kwargs: t.Any) -> dict[str, t.Any]:
+    return {
+        **_standard_connection_kwargs(settings, **kwargs),
+        "password": settings.redis_sentinel_password or settings.redis_password,
+    }
+
+
 @cache
 def sentinel(settings: RedisSettings, **kwargs: t.Any) -> aioredis.sentinel.Sentinel:
     "Create a redis sentinel client"
     return aioredis.sentinel.Sentinel(  # type: ignore
         settings.redis_sentinel_hosts,
         **_standard_connection_kwargs(settings, **kwargs),
-        sentinel_kwargs={
-            **_standard_connection_kwargs(settings, **kwargs),
-            "password": settings.redis_sentinel_password or settings.redis_password,
-        },
+        sentinel_kwargs=_sentinel_connection_kwargs(settings, **kwargs),
+    )
+
+
+@cache
+def sentinel_pool(
+    service_name: str, readonly: bool, settings: RedisSettings, **kwargs: t.Any
+) -> aioredis.ConnectionPool:
+    # Like .master_for()/.slave_for() but returning the pool instead
+    return SentinelConnectionPool(  # type: ignore
+        service_name,
+        sentinel(settings, **kwargs),
+        is_master=not readonly,
+        # max_connections=5,    # TODO: Is this wanted?
+        check_connection=True,
+        connection_class=MoyaSentinelManagedSSLConnection
+        if kwargs.get("ssl", False)
+        else MoyaSentinelManagedConnection,
+        **_sentinel_connection_kwargs(settings, **kwargs),
     )
 
 
@@ -129,20 +182,22 @@ async def redis(
         settings = redis_settings()
 
     if settings.is_sentinel:
-        sent = sentinel(settings, **kwargs)
-        if readonly:
-            conn = sent.slave_for(settings.redis_sentinel_service)
-        else:
-            conn = sent.master_for(settings.redis_sentinel_service)
+        p = sentinel_pool(settings.redis_sentinel_service, readonly, settings, **kwargs)
     else:
-        conn = aioredis.Redis.from_pool(pool(settings, **kwargs))
+        p = pool(settings, **kwargs)
+
+    # Use the pool, but don't auto-close it when aclose() is called, just give back the connection for future
+    # reuse.
+    client = aioredis.Redis(connection_pool=p)
 
     # For some reason this occasionally happens during redis failover rather
     # than from_pool just raising the exception
-    if not conn:
+    if not client:
         raise ConnectionError("Could not connect to redis")
-    yield conn
-    await conn.aclose()
+    try:
+        yield client
+    finally:
+        await client.aclose()  # Releases the connection to the pool but doesn't close it
 
 
 Result = t.TypeVar("Result")
