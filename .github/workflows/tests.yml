@@ -2,6 +2,11 @@ name: Python package
 
 on: [push]
 
+permissions:
+  contents: read # This is required for actions/checkout
+  packages: write # This is required to push images to Github packages
+  id-token: write # This is required for requesting the JWT token
+
 jobs:
   build:
     strategy:
