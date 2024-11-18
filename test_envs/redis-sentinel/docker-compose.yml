@@ -3,13 +3,13 @@ networks:
 
 services:
   redis-master:
-    image: redis:7.2.3
+    image: ${DOCKER_HUB_URL}library/redis:7.2.3
     command: ["sh", "-c", "rm -f /data/dump.rdb && redis-server --requirepass testpassword"]  # disable persistence
     init: true
     networks:
       - overlay
   redis-slave:
-    image: redis:7.2.3
+    image: ${DOCKER_HUB_URL}library/redis:7.2.3
     command: ["sh", "-c", "rm -f /data/dump.rdb && redis-server --requirepass testpassword --masterauth testpassword --replicaof 'redis-master 6379'"]  # disable persistence
     init: true
     depends_on:
@@ -18,7 +18,7 @@ services:
       - overlay
 
   redis-sentinel:
-    image: bitnami/redis-sentinel:latest
+    image: ${DOCKER_HUB_URL}library/bitnami/redis-sentinel:latest
     depends_on:
       - redis-master
       - redis-slave
