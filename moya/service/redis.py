@@ -52,6 +52,14 @@ class MoyaSentinelManagedSSLConnection(SentinelManagedConnection, SSLConnection)
     pass
 
 
+class BlockingSentinelConnectionPool(SentinelConnectionPool, aioredis.BlockingConnectionPool):
+    """
+    A sentinel connection pool that blocks until a connection is available.
+    """
+
+    pass
+
+
 class RedisSettings(MoyaSettings):
     """
     Pull settings from standardized redis environment variables
@@ -64,9 +72,12 @@ class RedisSettings(MoyaSettings):
     redis_sentinel_service: str = "mymaster"
     redis_sentinel_password: t.Optional[str] = None  # if None then redis_password is used
 
+    redis_max_connections: int = 10  # Maximum number of connections to keep open in a pool
+    redis_pool_timeout: float | int = 1.0  # Maximum amount of time to block for a connection to be returned.
+
     # By default, redis will hang forever if the connection connects but
     # cannot send/receive data. Ensure it blows up rather than hangs.
-    redis_timeout: float = 1.0
+    redis_timeout: float | int = 1.0
     redis_connect_retries: int = 3
 
     @validator("redis_sentinel_hosts", always=True)
@@ -111,6 +122,13 @@ def _standard_connection_kwargs(settings: RedisSettings, decode_responses: bool 
     }
 
 
+def _pool_kwargs(settings: RedisSettings) -> dict[str, t.Any]:
+    return {
+        "max_connections": settings.redis_max_connections,
+        "timeout": settings.redis_pool_timeout,
+    }
+
+
 def _sentinel_connection_kwargs(settings: RedisSettings, **kwargs: t.Any) -> dict[str, t.Any]:
     return {
         **_standard_connection_kwargs(settings, **kwargs),
@@ -133,12 +151,12 @@ def sentinel_pool(
     service_name: str, readonly: bool, settings: RedisSettings, **kwargs: t.Any
 ) -> aioredis.ConnectionPool:
     # Like .master_for()/.slave_for() but returning the pool instead
-    return SentinelConnectionPool(  # type: ignore
+    return BlockingSentinelConnectionPool(  # type: ignore
         service_name,
         sentinel(settings, **kwargs),
         is_master=not readonly,
-        # max_connections=5,    # TODO: Is this wanted?
         check_connection=True,
+        **_pool_kwargs(settings),
         connection_class=MoyaSentinelManagedSSLConnection
         if kwargs.get("ssl", False)
         else MoyaSentinelManagedConnection,
@@ -151,7 +169,9 @@ def pool(settings: RedisSettings, **kwargs: t.Any) -> aioredis.ConnectionPool:
     "Create a redis connection pool"
     if not settings.redis_url:
         raise ValueError("Redis URL is not set")
-    return aioredis.ConnectionPool.from_url(settings.redis_url, **_standard_connection_kwargs(settings, **kwargs))
+    return aioredis.BlockingConnectionPool.from_url(
+        settings.redis_url, **_standard_connection_kwargs(settings, **kwargs), **_pool_kwargs(settings)
+    )
 
 
 @asynccontextmanager
