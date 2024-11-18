@@ -17,31 +17,43 @@ jobs:
 
     runs-on: ${{ matrix.builder }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      -
+        name: Checkout code
+        uses: actions/checkout@v4
+      -
+        name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Configure aws credentials
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: session-${{ github.run_id }}-${{ github.run_attempt }}
           aws-region: eu-west-1
-      - name: Login to Amazon ECR
+      -
+        name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
       - name: Install dependencies
         run: |
           python -m pip install -e ".[dev,pydantic-${{ matrix.pydantic-version }},all]"
-      - name: Run lint
+      -
+        name: Run lint
         run: |
           poe lint
-      - name: Test with pytest
+      -
+        name: Test with pytest
         # A 250 exit status sometimes randomly comes from the coverage report black magic
         run: |
           poe test -vv
-      - name: Run live redis tests
+      -
+        name: Run live redis tests
         run: |
           cd test_envs/redis-sentinel
           docker compose up -d
