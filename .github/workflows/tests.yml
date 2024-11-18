@@ -8,7 +8,7 @@ permissions:
   packages: write # This is required to push images to Github packages
 
 jobs:
-  test_suite:
+  package_build:
     uses: moya-app/shared-workflows/.github/workflows/python-utils.yml@tc/add-python-utils-wf
     secrets: inherit
 ##
