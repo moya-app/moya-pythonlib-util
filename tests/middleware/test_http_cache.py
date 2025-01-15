@@ -27,7 +27,7 @@ from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_head
 )
 async def test_cache_headers(subtests: t.Any, last_modified: str | int | datetime) -> None:
     app = FastAPI()
-    client = httpx.AsyncClient(app=app, base_url="http://test")
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")
 
     class TestItem(BaseModel):
         name: str
@@ -80,7 +80,7 @@ async def test_cache_headers(subtests: t.Any, last_modified: str | int | datetim
 
 async def test_if_modified_middleware() -> None:
     app = FastAPI()
-    client = httpx.AsyncClient(app=app, base_url="http://test")
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")
     app.add_middleware(IfModifiedSinceMiddleware)
 
     class TestItem(BaseModel):

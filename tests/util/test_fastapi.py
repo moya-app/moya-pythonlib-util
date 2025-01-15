@@ -31,7 +31,7 @@ async def test_basics() -> None:
         assert trace.get_current_span().is_recording()
         return test_item
 
-    client = httpx.AsyncClient(app=app, base_url="http://test")
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")
     await client.get("/item")
     attrs = spans.get_finished_spans()[-1].attributes
     assert attrs
@@ -58,7 +58,7 @@ async def test_basics() -> None:
 async def test_docs() -> None:
     with patch.dict(os.environ, {"APP_COMMIT_TAG": "1.0.0", "APP_HIDE_DOCS": "false"}):
         app = setup_fastapi()
-        client = httpx.AsyncClient(app=app, base_url="http://test")
+        client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")
         res = await client.get("/openapi.json")
         assert res.status_code == 200
         assert res.json()["info"]["version"] == "1.0.0"

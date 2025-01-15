@@ -6,7 +6,7 @@ import zlib
 import brotli
 import pytest
 from fastapi import APIRouter, FastAPI, Request
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
 from moya.middleware.gzip_route import GzipRoute
@@ -14,7 +14,7 @@ from moya.middleware.gzip_route import GzipRoute
 
 async def test_inbound_gzip(subtests: t.Any) -> None:
     app = FastAPI()
-    client = AsyncClient(app=app, base_url="http://test")
+    client = AsyncClient(transport=ASGITransport(app), base_url="http://test")
 
     router = APIRouter(prefix="", route_class=GzipRoute)
 
@@ -60,7 +60,7 @@ async def test_inbound_gzip(subtests: t.Any) -> None:
 
 async def test_inbound_brotli(subtests: t.Any) -> None:
     app = FastAPI()
-    client = AsyncClient(app=app, base_url="http://test")
+    client = AsyncClient(transport=ASGITransport(app), base_url="http://test")
 
     router = APIRouter(prefix="", route_class=GzipRoute)
 

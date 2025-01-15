@@ -7,7 +7,7 @@ from moya.middleware.multipleslashes import MultipleSlashesMiddleware
 async def test_if_modified_middleware() -> None:
     def setup_app() -> tuple[FastAPI, httpx.AsyncClient]:
         app = FastAPI()
-        client = httpx.AsyncClient(app=app)
+        client = httpx.AsyncClient(transport=httpx.ASGITransport(app))
 
         @app.get("/test")
         @app.get("/test/{name}")

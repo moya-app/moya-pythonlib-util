@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 # from moya.service.redis import redis
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 import moya.util.fastapi_ratelimit as fastapi_ratelimit
 from moya.util.background import never_run_in_background
@@ -65,7 +65,7 @@ async def test_empty_limits() -> None:
         async def root():
             return {"message": "Hello World"}
 
-        tester = AsyncClient(app=app, base_url="http://test")
+        tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
         for i in range(10):
             res = await tester.get("/1", auth=("user1", "pass"))
             assert res.status_code == 200, "Should be no limits in place"
@@ -91,7 +91,7 @@ async def test_env_pickups_named() -> None:
         async def root():
             return {"message": "Hello World"}
 
-        tester = AsyncClient(app=app, base_url="http://test")
+        tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
         res = await tester.get("/1", auth=("user1", "pass"))
         assert res.status_code == 200, "First request should be allowed"
         res = await tester.get("/2", auth=("user1", "pass"))
@@ -107,7 +107,7 @@ async def test_env_pickups_default() -> None:
         async def root():
             return {"message": "Hello World"}
 
-        tester = AsyncClient(app=app, base_url="http://test")
+        tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
         res = await tester.get("/1", auth=("user1", "pass"))
         assert res.status_code == 200, "First request should be allowed"
         res = await tester.get("/2", auth=("user1", "pass"))
@@ -125,7 +125,7 @@ async def do_tests(time_machine, limiter) -> None:
     async def root():
         return {"message": "Hello World"}
 
-    tester = AsyncClient(app=app, base_url="http://test")
+    tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
     res = await tester.get("/1", auth=("user1", "pass"))
     assert res.status_code == 200, "First request should be allowed"
     res = await tester.get("/2", auth=("user1", "pass"))
@@ -203,7 +203,7 @@ async def test_user_reset() -> None:
         async def api_3() -> None:
             pass
 
-    tester = AsyncClient(app=app, base_url="http://test")
+    tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
 
     # Block two users from multiple endpoints
     for endpoint in ("/1", "/2", "/3"):
