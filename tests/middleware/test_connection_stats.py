@@ -60,14 +60,14 @@ async def test_fastapi() -> None:
 
     with patch_trace() as called:
         await client.post("/item", json={"name": "Bar"})
-        assert called == {"bytes.rx": 15, "bytes.tx": 14}
+        assert called == {"bytes.rx": 14, "bytes.tx": 14}
 
     with patch_trace() as called:
         await client.post("/error", json={"name": "Bar"})
         assert called == {
-            "bytes.rx": 15,
+            "bytes.rx": 14,
             "bytes.tx": 24,
-            "error.input": b'{"name": "Bar"}',
+            "error.input": b'{"name":"Bar"}',
             "error.message": b'{"detail":"Bad Request"}',
         }
 

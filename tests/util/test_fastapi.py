@@ -43,7 +43,7 @@ async def test_basics() -> None:
     attrs = spans.get_finished_spans()[-1].attributes
     assert attrs
     assert attrs["http.server_name"] == "test", "Should have come from fastapi otel instrumentation"
-    assert attrs["bytes.rx"] == 15
+    assert attrs["bytes.rx"] == 14
     assert attrs["bytes.tx"] == 14
     spans.clear()
 
