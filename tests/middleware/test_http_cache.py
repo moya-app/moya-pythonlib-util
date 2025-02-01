@@ -110,3 +110,33 @@ async def test_if_modified_middleware() -> None:
         response = await client.get("/item", headers=headers)
         assert response.status_code == 304
         assert response.text == ""
+
+
+async def test_expires(time_machine) -> None:
+    time_machine.move_to("2021-01-01 00:00:00")
+    app = FastAPI()
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")
+
+    @app.get("/t1")
+    async def t1(request: Request, response: Response) -> None:
+        set_cache_headers(request, response, expires_in=7200, max_age=3600)
+
+    response = await client.get("/t1")
+    assert response.headers["cache-control"] == "max-age=3600, stale-if-error=3600, public"
+    assert response.headers["expires"] == "Fri, 01 Jan 2021 02:00:00 GMT"
+
+    @app.get("/t2")
+    async def t2(request: Request, response: Response) -> None:
+        set_cache_headers(request, response, expires=1738423224, max_age=3600)
+
+    response = await client.get("/t2")
+    assert response.headers["cache-control"] == "max-age=3600, stale-if-error=3600, public"
+    assert response.headers["expires"] == "Sat, 01 Feb 2025 15:20:24 GMT"
+
+    @app.get("/t3")
+    async def t3(request: Request, response: Response) -> None:
+        set_cache_headers(request, response, expires_in=7200)
+
+    response = await client.get("/t3")
+    assert response.headers["cache-control"] == "max-age=7200, stale-if-error=3600, public"
+    assert response.headers["expires"] == "Fri, 01 Jan 2021 02:00:00 GMT"

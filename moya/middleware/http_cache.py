@@ -1,5 +1,5 @@
 import typing as t
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime, parsedate
 
 from fastapi import HTTPException, Request, Response
@@ -40,10 +40,22 @@ class IfModifiedSinceMiddleware(BaseHTTPMiddleware):
         return response
 
 
+def _parse_time_input(input: str | int | float | datetime) -> str:
+    if isinstance(input, (int, float)):
+        input = datetime.fromtimestamp(input, timezone.utc)
+    if isinstance(input, datetime):
+        if input.tzinfo != timezone.utc:
+            input = input.astimezone(timezone.utc)
+        input = format_datetime(input, usegmt=True)
+    return input
+
+
 def set_cache_headers(
     request: Request,
     response: Response,
     last_modified: str | int | float | datetime | None = None,
+    expires: str | int | float | datetime | None = None,
+    expires_in: int | None = None,
     max_age: int | None = None,
     stale_if_error: int = 60 * 60,
     public: bool = True,
@@ -56,7 +68,10 @@ def set_cache_headers(
     :param last_modified: The last modified date of the content. If str is
         passed, it will be used as is. If int/float (unix epoch) or datetime is
         passed, it will be converted to a http timestamp.
-    :param max_age: The maximum time the content should be cached for as an integer
+    :param expires: Expires header, parsed the same as last_modified
+    :param expires_in: Set expires parameter to now + this many seconds
+    :param max_age: The maximum time the content should be cached for as an integer. Defaults to expires_in
+        if that is set.
     :param stale_if_error: The time the content can be used if there is a server error. Defaults to 1 hour
     :param public: If the content can be cached by public caches. Defaults to True
     :param skip_if_not_modified: If the further processing should be skipped
@@ -65,22 +80,27 @@ def set_cache_headers(
     """
     # Handle the cache-control header
     cache_control = []
-    if max_age:
-        cache_control.append(f"max-age={max_age}")
+    if max_age or expires_in:
+        cache_control.append(f"max-age={max_age or expires_in}")
     if stale_if_error:
         cache_control.append(f"stale-if-error={stale_if_error}")
     if public:
         cache_control.append("public")
     response.headers["Cache-Control"] = ", ".join(cache_control)
 
-    if last_modified:
-        if isinstance(last_modified, (int, float)):
-            last_modified = datetime.fromtimestamp(last_modified, timezone.utc)
-        if isinstance(last_modified, datetime):
-            if last_modified.tzinfo != timezone.utc:
-                last_modified = last_modified.astimezone(timezone.utc)
-            last_modified = format_datetime(last_modified, usegmt=True)
+    if expires_in and expires:
+        raise ValueError("Cannot set both expires and expires_in")
 
+    if expires_in:
+        expires = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+    if expires:
+        # TODO: Assert > now?
+        expires = _parse_time_input(expires)
+        response.headers["expires"] = expires
+
+    if last_modified:
+        last_modified = _parse_time_input(last_modified)
         response.headers["last-modified"] = last_modified
 
         # See if we should just return a 304 no updated data response based on the last-mod time
