@@ -57,6 +57,8 @@ jobs:
           docker images
           docker compose up -d
 
+          sleep 5 # Let sentinel sync up with each other
+
           export REDIS_URL="redis://$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker compose ps -q redis-master)):6379/0"
           export REDIS_SLAVE_URL="redis://$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker compose ps -q redis-slave)):6379/0"
           export SENTINEL_HOSTS="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker compose ps -q redis-sentinel) | jq --slurp -R -c 'split("\n") | map(select(.!="") | [., 26379])')"

@@ -18,7 +18,7 @@ services:
       - overlay
 
   redis-sentinel:
-    image: ${DOCKER_HUB_URL}bitnami/redis-sentinel:latest
+    image: ${DOCKER_HUB_URL}bitnami/redis-sentinel:7.4.2
     depends_on:
       - redis-master
       - redis-slave
