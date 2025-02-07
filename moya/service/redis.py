@@ -6,7 +6,7 @@ from functools import cache
 
 import redis.asyncio as aioredis
 from pydantic import validator
-from redis.asyncio import Redis  # noqa: F401 for reexport
+from redis.asyncio import Redis
 from redis.asyncio.connection import SSLConnection
 from redis.asyncio.sentinel import (
     SentinelConnectionPool,
@@ -14,7 +14,7 @@ from redis.asyncio.sentinel import (
     SlaveNotFoundError,
 )
 from redis.backoff import ExponentialBackoff
-from redis.exceptions import (  # noqa: F401 for reexport
+from redis.exceptions import (
     ConnectionError,
     RedisError,
     TimeoutError,
@@ -147,9 +147,7 @@ def sentinel(settings: RedisSettings, **kwargs: t.Any) -> aioredis.sentinel.Sent
 
 
 @cache
-def sentinel_pool(
-    service_name: str, readonly: bool, settings: RedisSettings, **kwargs: t.Any
-) -> aioredis.ConnectionPool:
+def sentinel_pool(service_name: str, readonly: bool, settings: RedisSettings, **kwargs: t.Any) -> aioredis.ConnectionPool:
     # Like .master_for()/.slave_for() but returning the pool instead
     return BlockingSentinelConnectionPool(  # type: ignore
         service_name,
@@ -157,9 +155,7 @@ def sentinel_pool(
         is_master=not readonly,
         check_connection=True,
         **_pool_kwargs(settings),
-        connection_class=MoyaSentinelManagedSSLConnection
-        if kwargs.get("ssl", False)
-        else MoyaSentinelManagedConnection,
+        connection_class=MoyaSentinelManagedSSLConnection if kwargs.get("ssl", False) else MoyaSentinelManagedConnection,
         **_sentinel_connection_kwargs(settings, **kwargs),
     )
 
@@ -169,15 +165,11 @@ def pool(settings: RedisSettings, **kwargs: t.Any) -> aioredis.ConnectionPool:
     "Create a redis connection pool"
     if not settings.redis_url:
         raise ValueError("Redis URL is not set")
-    return aioredis.BlockingConnectionPool.from_url(
-        settings.redis_url, **_standard_connection_kwargs(settings, **kwargs), **_pool_kwargs(settings)
-    )
+    return aioredis.BlockingConnectionPool.from_url(settings.redis_url, **_standard_connection_kwargs(settings, **kwargs), **_pool_kwargs(settings))
 
 
 @asynccontextmanager
-async def redis(
-    readonly: bool = False, settings: RedisSettings | None = None, **kwargs: t.Any
-) -> t.AsyncGenerator[aioredis.Redis, None]:
+async def redis(readonly: bool = False, settings: RedisSettings | None = None, **kwargs: t.Any) -> t.AsyncGenerator[aioredis.Redis, None]:
     """
     Return a redis connection from the pool, and close it correctly when
     completed. If sentinel is available in the config it will prefer to use
@@ -223,9 +215,7 @@ async def redis(
 Result = t.TypeVar("Result")
 
 
-async def redis_try_run(
-    coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]], readonly: bool = False, **kwargs: t.Any
-) -> t.Optional[Result]:
+async def redis_try_run(coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]], readonly: bool = False, **kwargs: t.Any) -> t.Optional[Result]:
     """
     Run a coroutine and log and ignore redis-specific errors. Depending on
     whether connection succeeds the coroutine may never even be run.
@@ -254,9 +244,7 @@ async def redis_try_run(
 
 
 class RedisCached:
-    def __init__(
-        self, func: t.Callable[..., t.Awaitable[Result]], key: str, expiry: int | None = None, cache_none: bool = True
-    ) -> None:
+    def __init__(self, func: t.Callable[..., t.Awaitable[Result]], key: str, expiry: int | None = None, cache_none: bool = True) -> None:
         self.func = func
         self.key = key
         self.expiry = expiry
@@ -303,9 +291,7 @@ class RedisCached:
         await redis_try_run(delete)
 
 
-def redis_cached(
-    key: str, expiry: int | None = None, cache_none: bool = True
-) -> t.Callable[[t.Callable[..., t.Awaitable[Result]]], RedisCached]:
+def redis_cached(key: str, expiry: int | None = None, cache_none: bool = True) -> t.Callable[[t.Callable[..., t.Awaitable[Result]]], RedisCached]:
     """
     Decorator to cache the result of a function in redis
 

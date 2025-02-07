@@ -148,9 +148,7 @@ def RateLimiter(
     if t.get_origin(user_id_decorator) is not t.Annotated:
         user_id_decorator = t.Annotated[str, user_id_decorator]
 
-    ratelimiter = _RateLimiter(
-        limiter_class(settings.get(name, default_limits), name), user_id_decorator=user_id_decorator
-    )
+    ratelimiter = _RateLimiter(limiter_class(settings.get(name, default_limits), name), user_id_decorator=user_id_decorator)
     # TODO: I know this is hacky as it holds all references ever created. But with FastAPI this is probably
     # reasonable to assume.
     _all_fastapi_ratelimiters.append(ratelimiter)
@@ -173,9 +171,7 @@ def RateLimiterDep(
     async def foo():
         pass
     """
-    return RateLimiter(
-        name, user_id_decorator=user_id_decorator, default_limits=default_limits, limiter_class=limiter_class
-    ).dependency
+    return RateLimiter(name, user_id_decorator=user_id_decorator, default_limits=default_limits, limiter_class=limiter_class).dependency
 
 
 async def reset_all_ratelimiters_for_user(user_id: str) -> None:

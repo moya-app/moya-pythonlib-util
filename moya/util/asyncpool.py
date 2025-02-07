@@ -22,9 +22,7 @@ async def _run_worker(queue: asyncio.Queue[T], fn: t.Callable[[T], t.Awaitable[N
 
 
 @asynccontextmanager
-async def asyncpool(
-    fn: t.Callable[[T], t.Awaitable[None]], worker_count: int = 5, maxsize: int = 0
-) -> t.AsyncIterator[t.Callable[[T], t.Awaitable[None]]]:
+async def asyncpool(fn: t.Callable[[T], t.Awaitable[None]], worker_count: int = 5, maxsize: int = 0) -> t.AsyncIterator[t.Callable[[T], t.Awaitable[None]]]:
     """
     Run a pool of workers to process items from a queue. The queue is returned
     from the context manager and can be used to enqueue items for processing.

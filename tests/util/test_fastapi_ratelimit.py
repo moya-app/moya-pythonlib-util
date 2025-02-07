@@ -82,11 +82,7 @@ async def test_env_pickups_named() -> None:
         # No limit but a default should work correctly
         @app.get(
             "/{id}",
-            dependencies=[
-                RateLimiterDep(
-                    "foo", Depends(ensure_verified), default_limits=RateLimit(per_second=1), limiter_class=MemLimiter
-                )
-            ],
+            dependencies=[RateLimiterDep("foo", Depends(ensure_verified), default_limits=RateLimit(per_second=1), limiter_class=MemLimiter)],
         )
         async def root():
             return {"message": "Hello World"}

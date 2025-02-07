@@ -11,12 +11,7 @@ def should_return_304(request: Request, response: Response) -> bool:
     if_modified_since = parsedate(request.headers.get("If-Modified-Since"))
     last_modified = parsedate(response.headers.get("last-modified"))
 
-    if (
-        request.method in ("GET", "HEAD")
-        and if_modified_since
-        and last_modified
-        and last_modified <= if_modified_since
-    ):
+    if request.method in ("GET", "HEAD") and if_modified_since and last_modified and last_modified <= if_modified_since:
         return True
 
     return False
@@ -108,9 +103,5 @@ def set_cache_headers(
             # Same as a NotModifiedResponse but bypassing further processing
             raise HTTPException(
                 status_code=304,
-                headers={
-                    name: value
-                    for name, value in response.headers.items()
-                    if name in NotModifiedResponse.NOT_MODIFIED_HEADERS
-                },
+                headers={name: value for name, value in response.headers.items() if name in NotModifiedResponse.NOT_MODIFIED_HEADERS},
             )

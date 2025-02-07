@@ -67,23 +67,22 @@ def test_settings():
             assert s, f"Should work with sentinel config {env}"
             assert s.is_sentinel is True, f"Should be sentinel config {env}"
 
-    with fake_redis_config({}), pytest.raises(
-        ValueError, match="Must specify APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS"
+    with fake_redis_config({}), pytest.raises(ValueError, match="Must specify APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS"):
+        r.RedisSettings()
+
+    with (
+        fake_redis_config(
+            {
+                "APP_REDIS_URL": "redis://localhost:6379/0",
+                "APP_REDIS_SENTINEL_HOSTS": '[["1.2.3.4", 1234]]',
+            },
+        ),
+        pytest.raises(ValueError, match="Must only specify one of APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS"),
     ):
         r.RedisSettings()
 
-    with fake_redis_config(
-        {
-            "APP_REDIS_URL": "redis://localhost:6379/0",
-            "APP_REDIS_SENTINEL_HOSTS": '[["1.2.3.4", 1234]]',
-        },
-    ), pytest.raises(ValueError, match="Must only specify one of APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS"):
-        r.RedisSettings()
 
-
-@pytest.mark.skipif(
-    "SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env"
-)
+@pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
 async def test_redis(subtests) -> None:
     for config, readonly_enforced, writeable in [
         [{"APP_REDIS_URL": os.environ["REDIS_URL"]}, False, True],
@@ -165,9 +164,7 @@ class CacheTest(BaseModel):
     value: int
 
 
-@pytest.mark.skipif(
-    "SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env"
-)
+@pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
 async def test_redis_cached(subtests) -> None:
     for config in [
         {"APP_REDIS_URL": os.environ["REDIS_URL"]},

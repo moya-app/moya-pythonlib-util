@@ -16,9 +16,5 @@ def test_parser_rsa_id() -> None:
 
     assert parse_rsa_id("9307035489087") == IDDetails(date_of_birth=741657600, gender="Male", citizenship="SA Citizen")
     assert parse_rsa_id("7201015075085") == IDDetails(date_of_birth=63072000, gender="Male", citizenship="SA Citizen")
-    assert parse_rsa_id("7104134800088") == IDDetails(
-        date_of_birth=40348800, gender="Female", citizenship="SA Citizen"
-    )
-    assert parse_rsa_id("7104134800187") == IDDetails(
-        date_of_birth=40348800, gender="Female", citizenship="Permanent Resident"
-    )
+    assert parse_rsa_id("7104134800088") == IDDetails(date_of_birth=40348800, gender="Female", citizenship="SA Citizen")
+    assert parse_rsa_id("7104134800187") == IDDetails(date_of_birth=40348800, gender="Female", citizenship="Permanent Resident")

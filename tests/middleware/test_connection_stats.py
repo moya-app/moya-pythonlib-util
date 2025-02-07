@@ -71,9 +71,7 @@ async def test_fastapi() -> None:
             "error.message": b'{"detail":"Bad Request"}',
         }
 
-    client = httpx.AsyncClient(
-        transport=httpx.ASGITransport(app), base_url="http://test", headers={"user-agent": "blah foo Moya/1.0.0 fred"}
-    )
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test", headers={"user-agent": "blah foo Moya/1.0.0 fred"})
     with patch_trace() as called:
         await client.get("/item")
         assert called == {"bytes.rx": 0, "bytes.tx": 14, "moya.platform": "android", "moya.version": "1.0.0"}
