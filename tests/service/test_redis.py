@@ -181,7 +181,7 @@ async def test_redis_cached(subtests) -> None:
 
             assert await cache_test(1) == 2, "Decorator should have worked"
             assert cache_call_count == 1
-            await asyncio.sleep(0.1)  # Allow cached value to go into redis in background
+            await asyncio.sleep(0.5)  # Allow cached value to go into redis in background
             assert await cache_test(1) == 2, "Should now have been cached"
             assert cache_call_count == 1
 

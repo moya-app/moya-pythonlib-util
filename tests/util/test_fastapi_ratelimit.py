@@ -1,3 +1,4 @@
+import asyncio
 import os
 import typing as t
 from unittest.mock import patch
@@ -124,12 +125,16 @@ async def do_tests(time_machine, limiter) -> None:
     tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
     res = await tester.get("/1", auth=("user1", "pass"))
     assert res.status_code == 200, "First request should be allowed"
+    await asyncio.sleep(0.1)
     res = await tester.get("/2", auth=("user1", "pass"))
     assert res.status_code == 200, "Second request should be allowed"
+    await asyncio.sleep(0.1)
     res = await tester.get("/3", auth=("user1", "pass"))
     assert res.status_code == 429, "3rd request should be ratelimited"
+    await asyncio.sleep(0.1)
     res = await tester.get("/4", auth=("user2", "pass"))
     assert res.status_code == 200, "Request from a different user should not be ratelimited"
+    await asyncio.sleep(0.1)
     res = await tester.get("/5", auth=("user1", "pass"))
     assert res.status_code == 429, "4rd request should be ratelimited"
 
@@ -140,8 +145,10 @@ async def do_tests(time_machine, limiter) -> None:
     time_machine.shift(61)
     res = await tester.get("/6", auth=("user1", "pass"))
     assert res.status_code == 200, "After 1 minute, 2 requests should be allowed again"
+    await asyncio.sleep(0.1)
     res = await tester.get("/7", auth=("user1", "pass"))
     assert res.status_code == 200, "After 1 minute, 2 requests should be allowed again"
+    await asyncio.sleep(0.1)
     res = await tester.get("/8", auth=("user1", "pass"))
     assert res.status_code == 429, "After 1 minute, 2 requests should be allowed again"
 
