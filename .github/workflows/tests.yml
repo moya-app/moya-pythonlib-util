@@ -51,8 +51,8 @@ jobs:
           poe test -vv
       -
         name: Run live redis tests
+        working-directory: test_envs/redis-sentinel
         run: |
-          cd test_envs/redis-sentinel
           docker compose pull
           docker images
           docker compose up -d
@@ -63,3 +63,10 @@ jobs:
           poe test -vv
         env:
           DOCKER_HUB_URL: "${{ vars.DOCKER_HUB_URL }}"
+
+      - name: Show all logs
+        if: always()
+        working-directory: test_envs/redis-sentinel
+        run: |
+          docker compose logs -t
+          docker ps -a
