@@ -3,14 +3,15 @@
 # Mess around with turning on/off sentinels and redis servers to see what happens
 import asyncio
 import os
+import typing as t
 
 import moya.service.redis as r
 
 os.environ["APP_REDIS_PASSWORD"] = "testpassword"
 
 
-async def main():
-    async def runner(redis_conn) -> None:
+async def main() -> None:
+    async def runner(redis_conn: t.Any) -> None:
         # ok = await redis_conn.set("key", "value")
         # print(ok)
         print(await redis_conn.get("key"))

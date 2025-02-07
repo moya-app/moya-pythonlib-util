@@ -243,7 +243,7 @@ async def redis_try_run(coro: t.Callable[[aioredis.Redis], t.Awaitable[Result]],
         return None
 
 
-class RedisCached:
+class RedisCached(t.Generic[Result]):
     def __init__(self, func: t.Callable[..., t.Awaitable[Result]], key: str, expiry: int | None = None, cache_none: bool = True) -> None:
         self.func = func
         self.key = key
@@ -291,7 +291,7 @@ class RedisCached:
         await redis_try_run(delete)
 
 
-def redis_cached(key: str, expiry: int | None = None, cache_none: bool = True) -> t.Callable[[t.Callable[..., t.Awaitable[Result]]], RedisCached]:
+def redis_cached(key: str, expiry: int | None = None, cache_none: bool = True) -> t.Callable[[t.Callable[..., t.Awaitable[Result]]], RedisCached[Result]]:
     """
     Decorator to cache the result of a function in redis
 
@@ -301,7 +301,7 @@ def redis_cached(key: str, expiry: int | None = None, cache_none: bool = True) -
     :param cache_none: If set to False, the result will not be cached if it is None.
     """
 
-    def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> RedisCached:
+    def decorator(func: t.Callable[..., t.Awaitable[Result]]) -> RedisCached[Result]:
         return RedisCached(func, key, expiry, cache_none=cache_none)
 
     return decorator

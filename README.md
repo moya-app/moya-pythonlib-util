@@ -26,9 +26,11 @@ See individual module documentation for usage.
 
 # Development
 
-## Installation
+## Installation for local development
 
-    sudo python3 -m pip install -e .[dev,pydantic-v2,all]
+    uv venv
+    source venv/bin/activate
+    uv pip install -e .[dev,pydantic-v2,all]
 
 ## Linting
 
