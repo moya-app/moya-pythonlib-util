@@ -77,7 +77,7 @@ async def test_fastapi() -> None:
         assert called == {"bytes.rx": 0, "bytes.tx": 14, "moya.platform": "android", "moya.version": "1.0.0"}
 
     # With invalid utf8 character should not crash
-    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test", headers={"user-agent": b"blah foo Moya/1.0.0 fred \x8623.86"})
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test", headers={b"user-agent": b"blah foo Moya/1.0.0 fred \x8623.86"})
     with patch_trace() as called:
         await client.get("/item")
         assert called == {"bytes.rx": 0, "bytes.tx": 14}
