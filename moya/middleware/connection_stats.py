@@ -43,11 +43,15 @@ class ConnectionStatsMiddleware:
             if k == b"content-length":
                 try:
                     initial_body_size = int(v.decode("utf-8"))
-                except ValueError:
+                except (ValueError, UnicodeDecodeError):
                     pass
             elif k == b"user-agent":
-                moya_details = extract_moya_details(v.decode("utf-8"))
-                if moya_details:
+                try:
+                    ua = v.decode("utf-8")
+                except UnicodeDecodeError:
+                    continue
+
+                if moya_details := extract_moya_details(ua):
                     set_attribute("moya.platform", moya_details[0])
                     set_attribute("moya.version", moya_details[1])
 

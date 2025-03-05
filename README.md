@@ -29,7 +29,7 @@ See individual module documentation for usage.
 ## Installation for local development
 
     uv venv
-    source venv/bin/activate
+    source .venv/bin/activate
     uv pip install -e .[dev,pydantic-v2,all]
 
 ## Linting
