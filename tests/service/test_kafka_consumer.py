@@ -26,7 +26,7 @@ async def test_kafka_consumer_library():
         await k.start()
         mock_start.assert_called_once()
 
-    # TODO: Try reading stuff... Requires a running Kafka instance
+    # TODO: Try .getone() and async for
 
     with patch("aiokafka.AIOKafkaConsumer.stop") as mock_stop:
         await k.stop()
@@ -39,3 +39,13 @@ async def test_kafka_consumer_library():
             mock_stop.assert_not_called()
 
         mock_stop.assert_called_once()
+
+
+# TODO: Turn these into proper unit tests but for the moment make sure that mypy is happy at least
+async def mypy_checks() -> None:
+    k = KafkaConsumer(get_test_settings(), "test-group", ["test-topic1", "test-topic2"])
+    async with k.run():
+        await k.getone()
+
+        async for msg in k:
+            return

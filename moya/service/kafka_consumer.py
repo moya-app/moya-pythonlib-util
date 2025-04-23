@@ -65,5 +65,8 @@ class KafkaConsumer(KafkaBase):
 
         return await self.kafka.getone()
 
+    def __aiter__(self) -> t.Any:  # ConsumerRecord:
+        return self.kafka.__aiter__()
+
     async def __anext__(self) -> t.Any:  # ConsumerRecord:
         return await self.kafka.__anext__()
