@@ -63,6 +63,8 @@ class KafkaConsumer(KafkaBase):
             except asyncio.TimeoutError:
                 raise Exception("Kafka consumer not started")
 
+        # TODO: This may get stuck in a loop if value deserializer is JSON and json.loads raises an exception as it
+        # doesn't progress to the next record so keeps looping here. How do we fix this?
         return await self.kafka.getone()
 
     def __aiter__(self) -> t.Any:  # ConsumerRecord:
