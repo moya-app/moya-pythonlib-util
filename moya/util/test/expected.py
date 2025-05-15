@@ -1,6 +1,11 @@
+import json
 import typing as t
+from pathlib import Path
 
 import pytest
+
+ValuesType: t.TypeAlias = list[t.Any] | dict[str, t.Any]
+AssertValuesMatchExpected: t.TypeAlias = t.Callable[[ValuesType, Path], None]
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -14,3 +19,18 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope="session")
 def regenerate(pytestconfig: pytest.Config) -> bool:
     return t.cast(bool, pytestconfig.getoption("regenerate"))
+
+
+@pytest.fixture
+def assert_values_match_expected(regenerate: bool) -> AssertValuesMatchExpected:
+    def _assert_values_match_expected(values: ValuesType, filename: Path, **kwargs: t.Any) -> None:
+        if regenerate:
+            with filename.open("w") as fh:
+                fh.write(json.dumps(values, indent=2, **kwargs))
+        else:
+            with filename.open() as fh:
+                expected = json.loads(fh.read())
+            json_values = json.loads(json.dumps(values, **kwargs))
+            assert json_values == expected
+
+    return _assert_values_match_expected
