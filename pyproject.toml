@@ -16,6 +16,9 @@ dependencies = [
     "opentelemetry-distro",
 ]
 
+[project.entry-points.pytest11]
+"moya.util.test" = "moya.util.test"
+
 [project.optional-dependencies]
 dev = [
     "ruff==0.9.4",
@@ -60,7 +63,7 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["moya.middleware", "moya.util", "moya.service"]
+packages = ["moya.middleware", "moya.util", "moya.util.test", "moya.service"]
 
 [tool.ruff]
 target-version = "py312"
