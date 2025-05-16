@@ -5,7 +5,10 @@ from pathlib import Path
 import pytest
 
 ValuesType: t.TypeAlias = list[t.Any] | dict[str, t.Any]
-AssertValuesMatchExpected: t.TypeAlias = t.Callable[[ValuesType, Path], None]
+
+
+class AssertValuesMatchExpected(t.Protocol):
+    def __call__(self, values: ValuesType, filename: Path, **kwargs: t.Any) -> None: ...
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
