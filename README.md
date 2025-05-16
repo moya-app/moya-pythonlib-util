@@ -28,7 +28,7 @@ See individual module documentation for usage.
 
 ## Installation for local development
 
-    uv venv
+    uv venv --python 3.12
     source .venv/bin/activate
     uv pip install -e .[dev,pydantic-v2,all]
 

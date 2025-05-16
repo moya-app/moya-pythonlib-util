@@ -13,8 +13,6 @@ def test_moya_settings() -> None:
             "APP_FOO": "bar",
             # Implicit integer conversion
             "APP_BAR": "0",
-            # Paramstore stuff
-            "APP_FRED": "<UNSET>",
             # Nesting via __s
             "APP_NESTED__FOO": "bar",
             # Nesting via json
