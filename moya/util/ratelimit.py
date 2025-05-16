@@ -2,7 +2,7 @@ import abc
 import time
 from functools import cached_property
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from moya.service.redis import Redis, redis_try_run
 from moya.util.background import run_in_background
@@ -13,13 +13,12 @@ Generic ratelimit-related stuff, should have no FastAPI dependencies
 
 
 class RateLimit(BaseModel):
+    model_config = ConfigDict(ignored_types=(cached_property,))
+
     per_second: int | None = None
     per_minute: int | None = None
     per_hour: int | None = None
     per_day: int | None = None
-
-    class Config:
-        keep_untouched = (cached_property,)
 
     @cached_property
     def rates(self) -> list[tuple[int, int]]:

@@ -3,7 +3,7 @@ name = "moya-pythonlib-util"
 version = "0.12.0"
 description = "Moya Python Util Library"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Mark Zealey", email = "mark.zealey@moya.app" }
 ]
@@ -40,9 +40,6 @@ kafka = [
 ]
 redis = [
     "redis==5.2.0",
-]
-pydantic-v1 = [
-    "pydantic>=1.10.0,<2.0.0",
 ]
 pydantic-v2 = [
     "pydantic>=2.0.0,<3.0.0",

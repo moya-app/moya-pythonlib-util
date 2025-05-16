@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from functools import cache
 
 import redis.asyncio as aioredis
-from pydantic import validator
+from pydantic import model_validator
 from redis.asyncio import Redis
 from redis.asyncio.connection import SSLConnection
 from redis.asyncio.sentinel import (
@@ -80,14 +80,14 @@ class RedisSettings(MoyaSettings):
     redis_timeout: float | int = 1.0
     redis_connect_retries: int = 3
 
-    @validator("redis_sentinel_hosts", always=True)
-    def check_valid_connection(cls, sentinel_hosts: str, values: dict[str, t.Any]) -> str:
-        url = values.get("redis_url", None)
-        if url is None and sentinel_hosts is None:
+    @model_validator(mode="after")
+    def check_valid_connection(self) -> t.Self:
+        url = self.redis_url
+        if url is None and self.redis_sentinel_hosts is None:
             raise ValueError("Must specify APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS")
-        if url is not None and sentinel_hosts is not None:
+        if url is not None and self.redis_sentinel_hosts is not None:
             raise ValueError("Must only specify one of APP_REDIS_URL or APP_REDIS_SENTINEL_HOSTS")
-        return sentinel_hosts
+        return self
 
     @property
     def is_sentinel(self) -> bool:

@@ -28,7 +28,7 @@ async def test_inbound_gzip(subtests: t.Any) -> None:
 
     @router.post("/test_json")
     async def json_test(detail: TestReq) -> dict:
-        return detail.dict()
+        return detail.model_dump()
 
     app.include_router(router)
 
@@ -74,7 +74,7 @@ async def test_inbound_brotli(subtests: t.Any) -> None:
 
     @router.post("/test_json")
     async def json_test(detail: TestReq) -> dict:
-        return detail.dict()
+        return detail.model_dump()
 
     app.include_router(router)
 
