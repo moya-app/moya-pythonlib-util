@@ -29,10 +29,10 @@ def assert_values_match_expected(regenerate: bool) -> AssertValuesMatchExpected:
     def _assert_values_match_expected(values: ValuesType, filename: Path, **kwargs: t.Any) -> None:
         if regenerate:
             with filename.open("w") as fh:
-                fh.write(json.dumps(values, indent=2, **kwargs))
+                json.dump(values, fh, indent=2, **kwargs)
         else:
             with filename.open() as fh:
-                expected = json.loads(fh.read())
+                expected = json.load(fh)
             json_values = json.loads(json.dumps(values, **kwargs))
             assert json_values == expected
 
