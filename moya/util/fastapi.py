@@ -26,12 +26,13 @@ def generate_otel_lifespan(lifespan: t.Optional[t.Callable[[t.Any], t.AsyncConte
 
     @asynccontextmanager
     async def otel_lifespan(app: FastAPI) -> t.AsyncIterator[None]:
-        if "PYTHONPATH" not in os.environ:
-            os.environ["PYTHONPATH"] = ":".join(sys.path)
+        if "OTEL_SERVICE_NAME" in os.environ:  # Only enable OTEL if this is set
+            if "PYTHONPATH" not in os.environ:
+                os.environ["PYTHONPATH"] = ":".join(sys.path)
 
-        # This import will trigger auto-instrumentation for this process, which is needed for anything with multiple
-        # worker processes (e.g. gunicorn, uvicorn)
-        import opentelemetry.instrumentation.auto_instrumentation.sitecustomize  # noqa
+            # This import will trigger auto-instrumentation for this process, which is needed for anything with multiple
+            # worker processes (e.g. gunicorn, uvicorn)
+            import opentelemetry.instrumentation.auto_instrumentation.sitecustomize  # noqa
 
         # Call the existing lifespan context manager
         async with lifespan(app):
