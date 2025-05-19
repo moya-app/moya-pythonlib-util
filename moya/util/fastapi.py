@@ -1,6 +1,7 @@
 import typing as t
 
 from fastapi import FastAPI, Response
+from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel, Field
 
@@ -26,6 +27,10 @@ def setup_fastapi(openapi_tags: list[dict[str, str]] = [], **kwargs: t.Any) -> F
 
     kwargs["version"] = settings.commit_tag
     kwargs["openapi_url"] = None if settings.hide_docs else "/openapi.json"
+
+    # More performant than standard JSON response
+    if "default_response_class" not in kwargs:
+        kwargs["default_response_class"] = ORJSONResponse
 
     # According to the fastapi docs, this should auto-populate but per
     # https://github.com/fastapi/fastapi/discussions/12226 it does not.

@@ -51,6 +51,7 @@ fastapi = [
     "sentry-sdk[fastapi]",
     "opentelemetry-instrumentation-fastapi",
     "brotli==1.1.0",
+    "orjson>= 3.10,<4",       # Until FastAPI uses Pydantic model_dump_json by default
 ]
 # List all optional deps here
 all = [ "moya-pythonlib-util[beartype,kafka,redis,fastapi]" ]
