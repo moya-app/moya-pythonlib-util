@@ -40,6 +40,7 @@ kafka = [
 ]
 redis = [
     "redis==5.2.0",
+    "opentelemetry-instrumentation-redis",
 ]
 pydantic-v2 = [
     "pydantic>=2.0.0,<3.0.0",
