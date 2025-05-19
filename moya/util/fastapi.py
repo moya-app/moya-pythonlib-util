@@ -1,4 +1,7 @@
+import os
+import sys
 import typing as t
+from contextlib import asynccontextmanager, nullcontext
 
 from fastapi import FastAPI, Response
 from fastapi.responses import ORJSONResponse
@@ -18,6 +21,25 @@ class VersionResponse(BaseModel):
     version: str = Field(examples=["1.2.9"])
 
 
+def generate_otel_lifespan(lifespan: t.Optional[t.Callable[[t.Any], t.AsyncContextManager[None]]] = None) -> t.Callable[[t.Any], t.AsyncContextManager[None]]:
+    lifespan = lifespan or nullcontext
+
+    @asynccontextmanager
+    async def otel_lifespan(app: FastAPI) -> t.AsyncIterator[None]:
+        if "PYTHONPATH" not in os.environ:
+            os.environ["PYTHONPATH"] = ":".join(sys.path)
+
+        # This import will trigger auto-instrumentation for this process, which is needed for anything with multiple
+        # worker processes (e.g. gunicorn, uvicorn)
+        import opentelemetry.instrumentation.auto_instrumentation.sitecustomize  # noqa
+
+        # Call the existing lifespan context manager
+        async with lifespan(app):
+            yield
+
+    return otel_lifespan
+
+
 def setup_fastapi(openapi_tags: list[dict[str, str]] = [], **kwargs: t.Any) -> FastAPI:
     """
     Return a preconfigured FastAPI app with standard endpoints and OTEL
@@ -27,6 +49,9 @@ def setup_fastapi(openapi_tags: list[dict[str, str]] = [], **kwargs: t.Any) -> F
 
     kwargs["version"] = settings.commit_tag
     kwargs["openapi_url"] = None if settings.hide_docs else "/openapi.json"
+
+    # Override lifespan to add OTEL post-fork for gunicorn, uvicorn, etc.
+    kwargs["lifespan"] = generate_otel_lifespan(kwargs.get("lifespan"))
 
     # More performant than standard JSON response
     if "default_response_class" not in kwargs:
