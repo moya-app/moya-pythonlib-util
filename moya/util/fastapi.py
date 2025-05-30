@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import typing as t
@@ -6,6 +7,7 @@ from contextlib import asynccontextmanager, nullcontext
 from fastapi import FastAPI, Response
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk._logs._internal import LoggingHandler
 from pydantic import BaseModel, Field
 
 from moya.middleware.connection_stats import ConnectionStatsMiddleware
@@ -33,6 +35,12 @@ def generate_otel_lifespan(lifespan: t.Optional[t.Callable[[t.Any], t.AsyncConte
             # This import will trigger auto-instrumentation for this process, which is needed for anything with multiple
             # worker processes (e.g. gunicorn, uvicorn)
             import opentelemetry.instrumentation.auto_instrumentation.sitecustomize  # noqa
+
+            # Patch the newly created log handler so that OTEL_PYTHON_LOG_LEVEL is honoured. Can be removed once
+            # https://github.com/open-telemetry/opentelemetry-python/pull/4203 is merged.
+            otel_logger = next(filter(lambda n: isinstance(n, LoggingHandler), logging.getLogger().handlers), None)
+            if otel_logger:
+                otel_logger.setLevel(logging.getLevelName(os.environ.get("OTEL_PYTHON_LOG_LEVEL", "WARNING").upper()))
 
         # Call the existing lifespan context manager
         async with lifespan(app):
