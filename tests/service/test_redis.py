@@ -20,15 +20,6 @@ async def random_key():
     yield f"test:{uuid.uuid4()}"
 
 
-def reset_redis_caches() -> None:
-    # Clear @cache'd values in our the redis library. Must be done when
-    # environment variables change so that new config is picked up.
-    r.pool.cache_clear()
-    r.sentinel.cache_clear()
-    r.sentinel_pool.cache_clear()
-    r.redis_settings.cache_clear()
-
-
 @contextmanager
 def fake_redis_config(env: dict) -> t.Generator[None, None, None]:
     default_test_env = {
@@ -37,8 +28,12 @@ def fake_redis_config(env: dict) -> t.Generator[None, None, None]:
         "APP_REDIS_PASSWORD": "testpassword",
     }
     with patch.dict(os.environ, {**default_test_env, **env}):
+        # Recreate the base redis() client with the new config
+        r._redis = r.MoyaRedisClient()
+        r.redis = r._redis.get_connection
+        r.redis_try_run = r._redis.try_run
+
         yield
-        reset_redis_caches()
 
 
 def test_settings():
@@ -46,7 +41,7 @@ def test_settings():
         s = r.RedisSettings()
         assert s, "Should work with standard config"
         assert s.is_sentinel is False, "Should not be sentinel config"
-        assert r._standard_connection_kwargs(s) == {
+        assert r._redis._standard_connection_kwargs() == {
             "encoding": "utf-8",
             "decode_responses": True,
             "password": "testpassword",
@@ -133,13 +128,13 @@ async def test_redis_bad_host(subtests):
     i = 0
     for config in [{"APP_REDIS_URL": redis_url}, {"APP_REDIS_SENTINEL_HOSTS": sentinel_hosts}]:
         with fake_redis_config(config):
-            s = r.redis_settings()
+            s = r.RedisSettings()
             with subtests.test(f"redis({s})"), pytest.raises(MasterNotFoundError if s.is_sentinel else r.TimeoutError):
                 async with r.redis() as redis_conn:
                     # Need some redis activity to trigger the connection attempt
                     await redis_conn.get("test")
 
-            with subtests.test(f"redis_try_run({r.redis_settings()})"):
+            with subtests.test(f"redis_try_run({r._redis.settings})"):
                 was_run = False
 
                 async def runner(redis_conn) -> bool:
@@ -151,7 +146,7 @@ async def test_redis_bad_host(subtests):
                 assert await r.redis_try_run(runner) is None, "Should return None value"
                 assert was_run is False, "Should not have run runner due to connection failure"
 
-            with subtests.test(f"@redis_cached({r.redis_settings()})"):
+            with subtests.test(f"@redis_cached({r._redis.settings})"):
                 assert await cache_test(i) == i + 1, "Decorator should have worked"
                 assert await cache_test(i) == i + 1, "Decorator should have worked"
                 i += 1
