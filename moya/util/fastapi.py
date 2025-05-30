@@ -38,7 +38,7 @@ def generate_otel_lifespan(lifespan: t.Optional[t.Callable[[t.Any], t.AsyncConte
 
             # Patch the newly created log handler so that OTEL_PYTHON_LOG_LEVEL is honoured. Can be removed once
             # https://github.com/open-telemetry/opentelemetry-python/pull/4203 is merged.
-            otel_logger = next(filter(lambda n: isinstance(n, LoggingHandler), logging.getLogger().handlers), None)
+            otel_logger = next((h for h in logging.getLogger().handlers if isinstance(h, LoggingHandler)), None)
             if otel_logger:
                 otel_logger.setLevel(logging.getLevelName(os.environ.get("OTEL_PYTHON_LOG_LEVEL", "WARNING").upper()))
 
