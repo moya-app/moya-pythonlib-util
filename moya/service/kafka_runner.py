@@ -77,7 +77,7 @@ class KafkaRunner(abc.ABC, Generic[T]):
                     await asyncio.sleep(0.1)
                     continue
 
-                # Pull the propergated trace from the consumer message so it ties back to the original request
+                # Pull the propagated trace from the consumer message so it ties back to the original request
                 # TODO: Move this into a pythonlib util helper function.
                 context = propagate.extract(record.headers, getter=_aiokafka_getter)
                 with tracer.start_as_current_span("process-record", context=context) as span:
