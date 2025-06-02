@@ -37,6 +37,7 @@ beartype = [
 ]
 kafka = [
     "aiokafka[lz4]>=0.9.0",
+    "opentelemetry-instrumentation-aiokafka",
 ]
 redis = [
     "redis==5.2.0",
