@@ -43,6 +43,8 @@ class KafkaRunner(abc.ABC, Generic[T]):
     """
 
     def __init__(self, consumer_group: str, topics: list[str]) -> None:
+        self.consumer_group = consumer_group
+        self.topics = topics
         self.consumer = KafkaConsumer(
             KafkaSettings(),
             consumer_group,
@@ -56,8 +58,11 @@ class KafkaRunner(abc.ABC, Generic[T]):
         )
 
     @abc.abstractmethod
-    def parse_record(self, topic: str, value: bytes) -> tuple[T, str]:
-        "Return the raw Kafka item into a (pydantic) item and a string which is used for logging"
+    def parse_record(self, topic: str, value: bytes) -> tuple[T, str] | None:
+        """
+        Return the raw Kafka item into a (pydantic) item and a string which is used for logging. Return None to skip
+        processing.
+        """
         ...
 
     @abc.abstractmethod
@@ -82,7 +87,10 @@ class KafkaRunner(abc.ABC, Generic[T]):
                 context = propagate.extract(record.headers, getter=_aiokafka_getter)
                 with tracer.start_as_current_span("process-record", context=context) as span:
                     try:
-                        item, logging_key = self.parse_record(record.topic, record.value)
+                        result = self.parse_record(record.topic, record.value)
+                        if result is None:
+                            continue
+                        item, logging_key = result
                     except Exception as e:
                         logger.exception(f"Received invalid JSON input for {record.value} (topic: {record.topic})", exc_info=e)
                         span.set_status(Status(StatusCode.ERROR))
