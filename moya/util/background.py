@@ -16,17 +16,19 @@ def never_run_in_background(value: bool) -> None:
     _never_run_in_background = value
 
 
-async def background_task_wrapper(task: Awaitable[Any]) -> None:
+async def background_task_wrapper(task: Awaitable[Any], name: str | None = None) -> None:
     """
     Run the given task logging exceptions to sentry
     """
     try:
         await task
+    except asyncio.CancelledError:
+        pass
     except Exception as e:
-        bg_logger.exception("Exception in background task", exc_info=e)
+        bg_logger.exception(f"Exception in background task '{name or 'Anon'}'", exc_info=e)
 
 
-async def run_in_background(task: Awaitable[Any]) -> None:
+async def run_in_background(task: Awaitable[Any], name: str | None = None) -> asyncio.Task[Any]:
     """
     Run a task in the background returning immediately, logging exceptions if
     they occur.
@@ -36,11 +38,12 @@ async def run_in_background(task: Awaitable[Any]) -> None:
     async def task():
         ... do stuff ...
 
-    await run_in_background(task())
+    t = await run_in_background(task())
+    t.cancel()
     """
-    # Note that this routine doesn't need to be async but setting it to this
-    # for consistency and to allow us to do other things in future.
     if _never_run_in_background:
         await task
+        # Return an empty task so that cancelling works
+        return asyncio.create_task(asyncio.sleep(0))
     else:
-        asyncio.create_task(background_task_wrapper(task))
+        return asyncio.create_task(background_task_wrapper(task, name), name=name)
