@@ -3,7 +3,7 @@ name = "moya-pythonlib-util"
 version = "0.12.0"
 description = "Moya Python Util Library"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 authors = [
     { name = "Mark Zealey", email = "mark.zealey@moya.app" }
 ]
