@@ -14,6 +14,7 @@ maintainers = [
 dependencies = [
     "sentry-sdk>=2.8.0,<3.0.0",
     "opentelemetry-distro",
+    "uvloop",
 ]
 
 [project.entry-points.pytest11]
@@ -126,7 +127,7 @@ test = "pytest . --cov=moya --cov-report=term"
 lint = ["lint:ruff-check", "lint:ruff-format", "lint:mypy"]
 "fix:ruff-check" = "ruff check --fix"
 "fix:ruff-format" = "ruff format"
-fix = ["fix:ruff-check", "fix:ruff-format"]
+fix = ["fix:ruff-format", "fix:ruff-check"]
 
 [tool.pytest.ini_options]
 addopts = [ "--strict-markers" ]
