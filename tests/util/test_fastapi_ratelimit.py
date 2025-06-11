@@ -10,7 +10,6 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from httpx import ASGITransport, AsyncClient
 
 import moya.util.fastapi_ratelimit as fastapi_ratelimit
-from moya.util.background import never_run_in_background
 from moya.util.fastapi_ratelimit import (  # , MemLimiter
     RateLimit,
     RateLimiter,
@@ -18,8 +17,6 @@ from moya.util.fastapi_ratelimit import (  # , MemLimiter
     reset_all_ratelimiters_for_user,
 )
 from moya.util.ratelimit import MemLimiter, RedisLimiter
-
-never_run_in_background(True)
 
 
 async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str | None:
@@ -29,7 +26,7 @@ async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends
     return None if credentials.username == "admin" else credentials.username
 
 
-async def test_basic_memlimiter(time_machine) -> None:
+async def test_basic_memlimiter(time_machine, no_background_tasks: None) -> None:
     with patch.dict(os.environ, {"APP_RATELIMITS": '{"test": {"per_minute": 2, "per_hour": 4}}'}):
         limiter = RateLimiter("test", Depends(ensure_verified), limiter_class=MemLimiter)
         await do_tests(time_machine, limiter)
@@ -40,7 +37,7 @@ async def test_basic_memlimiter(time_machine) -> None:
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ, reason="SENTINEL_HOSTS not specified")
-async def test_redis_limiter(time_machine) -> None:
+async def test_redis_limiter(time_machine, no_background_tasks: None) -> None:
     with patch.dict(
         os.environ,
         {
@@ -54,7 +51,7 @@ async def test_redis_limiter(time_machine) -> None:
         await do_tests(time_machine, limiter)
 
 
-async def test_empty_limits() -> None:
+async def test_empty_limits(no_background_tasks: None) -> None:
     """
     When limits are blank it should just work
     """
@@ -71,7 +68,7 @@ async def test_empty_limits() -> None:
             assert res.status_code == 200, "Should be no limits in place"
 
 
-async def test_env_pickups_named() -> None:
+async def test_env_pickups_named(no_background_tasks: None) -> None:
     with patch.dict(os.environ, {"APP_RATELIMITS": '{"test": {"per_minute": 2, "per_hour": 4}}'}):
         app = FastAPI()
 
@@ -94,7 +91,7 @@ async def test_env_pickups_named() -> None:
         assert res.status_code == 429, "Second request should be blocked"
 
 
-async def test_env_pickups_default() -> None:
+async def test_env_pickups_default(no_background_tasks: None) -> None:
     with patch.dict(os.environ, {"APP_RATELIMITS": '{"*": {"per_second": 1}}'}):
         app = FastAPI()
 
@@ -178,7 +175,7 @@ async def do_tests(time_machine, limiter) -> None:
         assert res.status_code == 200, "After a full reset, requests should be allowed again from all users"
 
 
-async def test_user_reset() -> None:
+async def test_user_reset(no_background_tasks: None) -> None:
     "Test resetting all ratelimiters for a user"
     app = FastAPI()
 
