@@ -48,7 +48,7 @@ class KafkaSettings(MoyaSettings):
 class KafkaBase:
     kafka: t.Any  # aiokafka.AIOKafkaConsumer | aiokafka.AIOKafkaProducer
 
-    def __init__(self, settings: KafkaSettings, startup_timeout: int = 20) -> None:
+    def __init__(self, settings: KafkaSettings, startup_timeout: float = 20) -> None:
         self.startup_timeout = startup_timeout
         self.settings = settings
         self.started: asyncio.Future[bool] | None = None
@@ -71,7 +71,7 @@ class KafkaBase:
         assert self.started is not None
 
         # Wait for kafka to start up and connect to it
-        for i in range(self.startup_timeout):
+        for i in range(int(self.startup_timeout) + 1):
             try:
                 await self.kafka.start()
                 self.started.set_result(True)
