@@ -49,6 +49,7 @@ jobs:
         # A 250 exit status sometimes randomly comes from the coverage report black magic
         run: |
           poe test -vv
+          poe test -vv non_async_tests/
       -
         name: Run live redis tests
         working-directory: test_envs/redis-sentinel

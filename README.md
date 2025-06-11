@@ -41,6 +41,7 @@ See individual module documentation for usage.
 ## Testing
 
     poe test
+    poe test non_async_tests/
 
 Or to test against real redis:
 
