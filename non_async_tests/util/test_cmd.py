@@ -1,5 +1,7 @@
 from moya.util.cmd import run_async
 
+# Because this screws with event loop it will break if we run alongside the standard test suite
+
 
 def test_run_async() -> None:
     async def basic_main() -> None:
