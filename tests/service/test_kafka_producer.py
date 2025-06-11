@@ -8,9 +8,6 @@ from unittest.mock import Mock, patch
 import pytest
 
 import moya.service.kafka_producer as kafka_producer
-from moya.util.background import never_run_in_background
-
-never_run_in_background(True)
 
 
 def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
@@ -27,7 +24,7 @@ def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
 
 
 @patch("asyncio.sleep")  # disable actually sleeping
-async def test_kafka_bad_connection(mock_sleep):
+async def test_kafka_bad_connection(mock_sleep, no_background_tasks: None) -> None:
     k = kafka_producer.KafkaProducer(get_test_settings())
     with pytest.raises(Exception, match="Kafka producer not started"):
         await k.send("test", {"test": "test"})
@@ -35,7 +32,8 @@ async def test_kafka_bad_connection(mock_sleep):
     with pytest.raises(Exception, match="Timeout connecting to Kafka"):
         await k.start()
 
-    assert mock_sleep.call_count == 20, "Should have tried a number of times to connect"
+    assert mock_sleep.call_count == 21, "Should have tried a number of times to connect"
+    assert k.started
     assert not k.started.done(), "Should have created the future but not completed it"
 
     k.startup_timeout = 0.1
@@ -57,7 +55,7 @@ def patch_kafka_send() -> t.Iterator[Mock]:
         yield mocker
 
 
-async def test_kafka_producer_library():
+async def test_kafka_producer_library(no_background_tasks: None) -> None:
     k = kafka_producer.KafkaProducer(get_test_settings())
 
     with patch("aiokafka.AIOKafkaProducer.start") as mock_start:
@@ -85,14 +83,14 @@ async def test_kafka_producer_library():
         mock_stop.assert_called_once()
 
 
-async def test_kafka_producer_fn():
+async def test_kafka_producer_fn(no_background_tasks: None) -> None:
     k = kafka_producer.kafka_producer(get_test_settings())
     assert k.settings.kafka_brokers == "localhost:9092"
     k = kafka_producer.kafka_producer(get_test_settings(kafka_brokers="localhost:9093"))
     assert k.settings.kafka_brokers == "localhost:9093"
 
 
-async def test_custom_encoder():
+async def test_custom_encoder(no_background_tasks: None) -> None:
     k = kafka_producer.KafkaProducer(get_test_settings())
 
     with patch("aiokafka.AIOKafkaProducer.start") as mock_start:

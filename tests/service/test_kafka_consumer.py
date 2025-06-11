@@ -1,9 +1,6 @@
 from unittest.mock import patch
 
 from moya.service.kafka_consumer import KafkaConsumer, KafkaSettings
-from moya.util.background import never_run_in_background
-
-never_run_in_background(True)
 
 
 def get_test_settings(**kwargs) -> KafkaSettings:
@@ -19,7 +16,7 @@ def get_test_settings(**kwargs) -> KafkaSettings:
     )
 
 
-async def test_kafka_consumer_library():
+async def test_kafka_consumer_library(no_background_tasks: None) -> None:
     k = KafkaConsumer(get_test_settings(), "test-group", ["test-topic1", "test-topic2"])
 
     with patch("aiokafka.AIOKafkaConsumer.start") as mock_start:
@@ -42,7 +39,7 @@ async def test_kafka_consumer_library():
 
 
 # TODO: Turn these into proper unit tests but for the moment make sure that mypy is happy at least
-async def mypy_checks() -> None:
+async def mypy_checks(no_background_tasks: None) -> None:
     k = KafkaConsumer(get_test_settings(), "test-group", ["test-topic1", "test-topic2"])
     async with k.run():
         await k.getone()

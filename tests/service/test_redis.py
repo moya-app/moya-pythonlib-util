@@ -10,9 +10,6 @@ from redis.asyncio.sentinel import MasterNotFoundError
 from redis.exceptions import ReadOnlyError
 
 import moya.service.redis as r
-from moya.util.background import never_run_in_background
-
-never_run_in_background(True)
 
 
 @asynccontextmanager
@@ -77,7 +74,7 @@ def test_settings():
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
-async def test_redis(subtests) -> None:
+async def test_redis(subtests, no_background_tasks: None) -> None:
     for config, readonly_enforced, writeable in [
         [{"APP_REDIS_URL": os.environ["REDIS_URL"]}, False, True],
         [{"APP_REDIS_URL": os.environ["REDIS_SLAVE_URL"]}, True, False],
@@ -117,7 +114,7 @@ async def test_redis(subtests) -> None:
                         await r.redis_try_run(runner, readonly=readonly)
 
 
-async def test_redis_bad_host(subtests):
+async def test_redis_bad_host(subtests, no_background_tasks: None) -> None:
     redis_url = "redis://10.0.0.1:6379/0"
     sentinel_hosts = '[["10.0.0.1", 26379]]'
 
@@ -159,7 +156,7 @@ class CacheTest(BaseModel):
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
-async def test_redis_cached(subtests) -> None:
+async def test_redis_cached(subtests, no_background_tasks: None) -> None:
     for config in [
         {"APP_REDIS_URL": os.environ["REDIS_URL"]},
         {"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]},
