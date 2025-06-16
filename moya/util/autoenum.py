@@ -4,7 +4,13 @@ import typing as t
 
 class AutoName(str, enum.Enum):
     """
-    Automatically set the value to the same as the name of the attribute
+    Deprecated: Automatically set the value to the same as the name of the attribute like:
+
+        class MyEnum(AutoName):
+            VALUE_1 = enum.auto()  # "VALUE_1"
+            value_2 = enum.auto()  # "value_2"
+
+    Use enum.StrEnum instead nowadays, although it does automatically lower-case the values.
     """
 
     @staticmethod
