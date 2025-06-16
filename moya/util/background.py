@@ -11,7 +11,7 @@ _never_run_in_background = False
 def never_run_in_background(value: bool) -> None:
     """
     Set whether background tasks should be run immediately or not. This is
-    useful for testing.
+    intended for use in test suites.
     """
     global _never_run_in_background
     _never_run_in_background = value
@@ -46,10 +46,14 @@ async def run_in_background(task: Awaitable[T], name: str | None = None, force_r
     task = await run_in_background(task())
     task.cancel()
     try:
-        result = await task
+        await task
     except asyncio.CancelledError:
         pass
     result = task.result()
+
+    If force_run_in_background is True, the task will be run in the background even if you have previously called
+    never_run_in_background(True). This is intended for background services which will loop forever, and should even be
+    run like this within the test suite.
     """
     if _never_run_in_background and not force_run_in_background:
         res = await task
@@ -92,6 +96,5 @@ async def background_task(task: Awaitable[T], name: str | None = None) -> AsyncI
 
 
 async def sleep_forever() -> None:
-    "Sleep forever helper because I can't find a sensible other way to do this"
-    while True:
-        await asyncio.sleep(10)
+    "Sleep forever helper because I always forget how to do this"
+    await asyncio.Future()

@@ -33,7 +33,7 @@ class KafkaProducer(KafkaBase):
     await kafka_producer().send("topic", {"key": "value"})
     """
 
-    def __init__(self, settings: KafkaSettings, startup_timeout: int = 20) -> None:
+    def __init__(self, settings: KafkaSettings, startup_timeout: float = 20) -> None:
         super().__init__(settings, startup_timeout)
 
     async def _initialize(self) -> None:
