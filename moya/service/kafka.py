@@ -2,6 +2,7 @@ import asyncio
 import logging
 import typing as t
 from contextlib import asynccontextmanager
+from math import ceil
 
 import aiokafka
 from aiokafka.helpers import create_ssl_context
@@ -23,7 +24,7 @@ class KafkaSettings(MoyaSettings):
     kafka_password: str
     kafka_brokers: str
 
-    kafka_producer_linger_ms: int = 200  # 200ms batches to improve send performance (producer-only)
+    kafka_producer_linger_ms: int = 50  # Block send tasks for up to 50ms to see if it can batch to improve send performance
 
     def as_kafka(self) -> dict[str, t.Any]:
         "Return settings as a dict suitable for passing to aiokafka"
@@ -71,7 +72,7 @@ class KafkaBase:
         assert self.started is not None
 
         # Wait for kafka to start up and connect to it
-        for i in range(int(self.startup_timeout) + 1):
+        for i in range(ceil(self.startup_timeout)):
             try:
                 await self.kafka.start()
                 self.started.set_result(True)

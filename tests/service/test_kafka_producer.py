@@ -32,11 +32,12 @@ async def test_kafka_bad_connection(mock_sleep, no_background_tasks: None) -> No
     with pytest.raises(Exception, match="Timeout connecting to Kafka"):
         await k.start()
 
-    assert mock_sleep.call_count == 21, "Should have tried a number of times to connect"
+    assert mock_sleep.call_count == 20, "Should have tried a number of times to connect"
     assert k.started
     assert not k.started.done(), "Should have created the future but not completed it"
 
     k.startup_timeout = 0.1
+    k = kafka_producer.KafkaProducer(get_test_settings())
     with pytest.raises(Exception, match="Kafka producer not started"):
         await k.send("test", {"test": "test"})
 
