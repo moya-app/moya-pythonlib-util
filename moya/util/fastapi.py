@@ -8,10 +8,19 @@ from fastapi import FastAPI, Response
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk._logs._internal import LoggingHandler
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from moya.middleware.connection_stats import ConnectionStatsMiddleware
 from moya.util.config import MoyaSettings
+
+
+class StrictBaseModel(BaseModel):
+    """
+    BaseModel with extra validation designed to be used as a base class for all FastAPI input/output models to prevent
+    typos.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class FastAPISettings(MoyaSettings):
