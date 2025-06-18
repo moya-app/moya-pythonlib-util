@@ -66,10 +66,12 @@ class RedisSettings(MoyaSettings):
     """
 
     redis_url: t.Optional[str] = None
+    redis_username: t.Optional[str] = None
     redis_password: str
 
     redis_sentinel_hosts: t.Optional[tuple[tuple[str, int], ...]] = None
     redis_sentinel_service: str = "mymaster"
+    redis_sentinel_username: t.Optional[str] = None  # if None then redis_username is used
     redis_sentinel_password: t.Optional[str] = None  # if None then redis_password is used
 
     redis_max_connections: int = 10  # Maximum number of connections to keep open in a pool
@@ -124,6 +126,7 @@ class MoyaRedisClient:
         return {
             "encoding": "utf-8",
             "decode_responses": decode_responses,
+            "username": self.settings.redis_username,
             "password": self.settings.redis_password,
             "socket_connect_timeout": self.settings.redis_timeout,
             "socket_timeout": self.settings.redis_timeout,
@@ -140,6 +143,7 @@ class MoyaRedisClient:
     def _sentinel_connection_kwargs(self, **kwargs: t.Any) -> dict[str, t.Any]:
         return {
             **self._standard_connection_kwargs(**kwargs),
+            "username": self.settings.redis_sentinel_username or self.settings.redis_username,
             "password": self.settings.redis_sentinel_password or self.settings.redis_password,
         }
 
