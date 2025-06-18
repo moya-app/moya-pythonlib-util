@@ -41,6 +41,7 @@ def test_settings():
         assert r._redis._standard_connection_kwargs() == {
             "encoding": "utf-8",
             "decode_responses": True,
+            "username": None,
             "password": "testpassword",
             "socket_connect_timeout": 0.1,
             "socket_timeout": 0.1,
