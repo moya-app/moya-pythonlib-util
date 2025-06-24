@@ -6,6 +6,10 @@ from aiokafka import AIOKafkaConsumer
 
 from .kafka import KafkaBase, KafkaSettings
 
+# Hack for lack of typing
+ConsumerRecord = t.Any
+TopicPartition = t.Any
+
 
 class KafkaConsumer(KafkaBase):
     """
@@ -54,7 +58,7 @@ class KafkaConsumer(KafkaBase):
         )
         await super()._initialize()
 
-    async def getone(self) -> t.Any:  # ConsumerRecord:
+    async def _check_started(self) -> None:
         if not self.started:
             raise Exception("Kafka consumer not started")
         if not self.started.done():
@@ -63,10 +67,16 @@ class KafkaConsumer(KafkaBase):
             except asyncio.TimeoutError:
                 raise Exception("Kafka consumer not started")
 
+    async def getone(self) -> ConsumerRecord:
+        await self._check_started()
         return await self.kafka.getone()
 
-    def __aiter__(self) -> t.Any:  # ConsumerRecord:
+    async def getmany(self, *partitions: str, timeout_ms: int = 0, max_records: int | None = None) -> dict[TopicPartition, list[ConsumerRecord]]:
+        await self._check_started()
+        return t.cast(dict[TopicPartition, list[ConsumerRecord]], await self.kafka.getmany(*partitions, timeout_ms=timeout_ms, max_records=max_records))
+
+    def __aiter__(self) -> ConsumerRecord:
         return self.kafka.__aiter__()
 
-    async def __anext__(self) -> t.Any:  # ConsumerRecord:
+    async def __anext__(self) -> ConsumerRecord:
         return await self.kafka.__anext__()
