@@ -71,7 +71,7 @@ class KafkaConsumer(KafkaBase):
         await self._check_started()
         return await self.kafka.getone()
 
-    async def getmany(self, *partitions: str, timeout_ms: int = 0, max_records: int | None = None) -> dict[TopicPartition, list[ConsumerRecord]]:
+    async def getmany(self, *partitions: str, timeout_ms: int = 1000, max_records: int | None = None) -> dict[TopicPartition, list[ConsumerRecord]]:
         await self._check_started()
         return t.cast(dict[TopicPartition, list[ConsumerRecord]], await self.kafka.getmany(*partitions, timeout_ms=timeout_ms, max_records=max_records))
 
