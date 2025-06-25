@@ -58,7 +58,7 @@ class KafkaRunner(abc.ABC, Generic[T]):
         :param topics: The list of topics to consume from
         :param kafka_batch_size: The number of records to fetch from Kafka at a time. The commit only happens after all
             of these records have been processed so any bugs or process exit will cause this whole batch to be retried
-            by the next process meaning you may get duplicates but you should never loose records.
+            by the next process meaning you may get duplicates but you should never lose records.
         :param worker_count: The number of parallel instances of process_item() to run at a time
         """
         self.consumer_group = consumer_group
@@ -126,7 +126,7 @@ class KafkaRunner(abc.ABC, Generic[T]):
                 # Don't commit because we want to retry probably???
             else:
                 # Doesn't matter if this fails for some reason, we can always re-process the record but we
-                # don't want to loose any records
+                # don't want to lose any records
                 # await run_in_background(self.consumer.kafka.commit())
 
                 logger.debug(f"Processed for {logging_key} lag {datetime.now() - timestamp}")

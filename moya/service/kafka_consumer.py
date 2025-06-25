@@ -75,8 +75,8 @@ class KafkaConsumer(KafkaBase):
         await self._check_started()
         return t.cast(dict[TopicPartition, list[ConsumerRecord]], await self.kafka.getmany(*partitions, timeout_ms=timeout_ms, max_records=max_records))
 
-    def __aiter__(self) -> ConsumerRecord:
-        return self.kafka.__aiter__()
+    def __aiter__(self) -> t.AsyncIterator[ConsumerRecord]:
+        return t.cast(t.AsyncIterator[ConsumerRecord], self.kafka.__aiter__())
 
     async def __anext__(self) -> ConsumerRecord:
         return await self.kafka.__anext__()
