@@ -22,7 +22,7 @@ class EnvArgumentParser(argparse.ArgumentParser):
 
 class PydanticArguments(MoyaSettings, cli_parse_args=True, cli_kebab_case=True):
     @classmethod
-    def run(cls) -> str | int:
+    def run(cls) -> int:
         css: CliSettingsSource[argparse.ArgumentParser] = CliSettingsSource(cls)
         try:
             CliApp.run(cls, cli_settings_source=css)
