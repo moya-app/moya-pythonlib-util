@@ -20,7 +20,7 @@ class EnvArgumentParser(argparse.ArgumentParser):
         return super()._add_action(action)
 
 
-class PydanticArguments(MoyaSettings, cli_parse_args=True, cli_kebab_case=True):
+class PydanticArguments(MoyaSettings, cli_parse_args=True, cli_kebab_case=True, cli_implicit_flags=True):
     @classmethod
     def run(cls) -> int:
         css: CliSettingsSource[argparse.ArgumentParser] = CliSettingsSource(cls)
