@@ -16,11 +16,17 @@ class EnvArgumentParser(argparse.ArgumentParser):
     def _add_action(self, action: argparse.Action) -> t.Any:
         env_var = "APP_" + action.dest.upper()
         action.default = os.environ.get(env_var, action.default)
-        action.help += f" [env: {env_var}]"  # type: ignore
+        if action.help is None:
+            action.help = ""
+        action.help += f" [env: {env_var}]"
         return super()._add_action(action)
 
 
 class PydanticArguments(MoyaSettings, cli_parse_args=True, cli_kebab_case=True, cli_implicit_flags=True):
+    """
+    New method for parsing CLI arguments. This should be used in all cmd's now instead of argparse.ArgumentParser.
+    """
+
     @classmethod
     def run(cls) -> int:
         css: CliSettingsSource[argparse.ArgumentParser] = CliSettingsSource(cls)

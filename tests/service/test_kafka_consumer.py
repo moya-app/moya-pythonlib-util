@@ -1,18 +1,17 @@
+import typing as t
 from unittest.mock import patch
 
 from moya.service.kafka_consumer import KafkaConsumer, KafkaSettings
 
 
-def get_test_settings(**kwargs) -> KafkaSettings:
+def get_test_settings(**kwargs: t.Any) -> KafkaSettings:
     return KafkaSettings(
-        **{
-            "kafka_sasl_mechanism": "PLAIN",
-            "kafka_security_protocol": "SASL_SSL",
-            "kafka_username": "test",
-            "kafka_password": "test",
-            "kafka_brokers": "localhost:9092",
-            **kwargs,
-        }
+        kafka_sasl_mechanism="PLAIN",
+        kafka_security_protocol="SASL_SSL",
+        kafka_username="test",
+        kafka_password="test",
+        kafka_brokers=["localhost:9092"],
+        **kwargs,
     )
 
 

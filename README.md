@@ -19,9 +19,6 @@ See individual module documentation for usage.
 ## TODOs
 
 - [ ] add tests for src/moya/service/kafka_runner.py
-- [ ] add tests for src/moya/util/asyncpool.py
-- [ ] add tests for src/moya/util/beartype.py
-- [ ] add tests for src/moya/util/background.py
 - [ ] add kafka tests with real kafka rather than just mocked
 - [ ] rapidpro start flow?
 
@@ -41,7 +38,6 @@ See individual module documentation for usage.
 ## Testing
 
     poe test
-    poe test non_async_tests/
 
 Or to test against real redis:
 

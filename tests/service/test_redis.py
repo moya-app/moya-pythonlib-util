@@ -6,6 +6,7 @@ from unittest.mock import ANY, patch
 
 import pytest
 from pydantic import BaseModel
+from redis.asyncio.client import Redis
 from redis.asyncio.sentinel import MasterNotFoundError
 from redis.exceptions import ReadOnlyError
 
@@ -13,12 +14,12 @@ import moya.service.redis as r
 
 
 @asynccontextmanager
-async def random_key():
+async def random_key() -> t.AsyncGenerator[str, None]:
     yield f"test:{uuid.uuid4()}"
 
 
 @contextmanager
-def fake_redis_config(env: dict) -> t.Generator[None, None, None]:
+def fake_redis_config(env: dict[str, str]) -> t.Generator[None, None, None]:
     default_test_env = {
         "APP_REDIS_TIMEOUT": "0.1",
         "APP_REDIS_CONNECT_RETRIES": "1",
@@ -33,7 +34,7 @@ def fake_redis_config(env: dict) -> t.Generator[None, None, None]:
         yield
 
 
-def test_settings():
+def test_settings() -> None:
     with fake_redis_config({"APP_REDIS_URL": "redis://localhost:6379/0"}):
         s = r.RedisSettings()
         assert s, "Should work with standard config"
@@ -75,13 +76,13 @@ def test_settings():
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
-async def test_redis(subtests, no_background_tasks: None) -> None:
-    for config, readonly_enforced, writeable in [
-        [{"APP_REDIS_URL": os.environ["REDIS_URL"]}, False, True],
-        [{"APP_REDIS_URL": os.environ["REDIS_SLAVE_URL"]}, True, False],
-        [{"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]}, True, True],
-    ]:
-        with fake_redis_config(t.cast(dict[str, str], config)):
+async def test_redis(subtests: t.Any, no_background_tasks: None) -> None:
+    for config, readonly_enforced, writeable in (
+        ({"APP_REDIS_URL": os.environ["REDIS_URL"]}, False, True),
+        ({"APP_REDIS_URL": os.environ["REDIS_SLAVE_URL"]}, True, False),
+        ({"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]}, True, True),
+    ):
+        with fake_redis_config(config):
             for readonly in (True, False):
                 if readonly and readonly_enforced or not writeable:
                     with subtests.test(f"redis() {config} readonly={readonly}"):
@@ -91,7 +92,7 @@ async def test_redis(subtests, no_background_tasks: None) -> None:
 
                     with subtests.test(f"redis_try_run() {config} readonly={readonly}"):
 
-                        async def runner(redis_conn) -> None:
+                        async def runner(redis_conn: Redis) -> None:
                             with pytest.raises(ReadOnlyError):
                                 async with random_key() as key:
                                     await redis_conn.set(key, "value")
@@ -106,7 +107,7 @@ async def test_redis(subtests, no_background_tasks: None) -> None:
 
                     with subtests.test(f"redis_try_run() {config} readonly={readonly}"):
 
-                        async def runner(redis_conn) -> None:
+                        async def runner(redis_conn: Redis) -> None:
                             async with random_key() as key:
                                 ok = await redis_conn.set(key, "value")
                                 assert ok, "Should have been able to set redis key"
@@ -115,7 +116,7 @@ async def test_redis(subtests, no_background_tasks: None) -> None:
                         await r.redis_try_run(runner, readonly=readonly)
 
 
-async def test_redis_bad_host(subtests, no_background_tasks: None) -> None:
+async def test_redis_bad_host(subtests: t.Any, no_background_tasks: None) -> None:
     redis_url = "redis://10.0.0.1:6379/0"
     sentinel_hosts = '[["10.0.0.1", 26379]]'
 
@@ -135,7 +136,7 @@ async def test_redis_bad_host(subtests, no_background_tasks: None) -> None:
             with subtests.test(f"redis_try_run({r._redis.settings})"):
                 was_run = False
 
-                async def runner(redis_conn) -> bool:
+                async def runner(redis_conn: Redis) -> bool:
                     await redis_conn.get("test")
                     nonlocal was_run
                     was_run = True
@@ -157,7 +158,7 @@ class CacheTest(BaseModel):
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ or "REDIS_URL" not in os.environ, reason="Requires docker-compose redis env")
-async def test_redis_cached(subtests, no_background_tasks: None) -> None:
+async def test_redis_cached(subtests: t.Any, no_background_tasks: None) -> None:
     for config in [
         {"APP_REDIS_URL": os.environ["REDIS_URL"]},
         {"APP_REDIS_SENTINEL_HOSTS": os.environ["SENTINEL_HOSTS"]},

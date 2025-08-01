@@ -8,12 +8,14 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 # from moya.service.redis import redis
 from httpx import ASGITransport, AsyncClient
+from time_machine import TimeMachineFixture
 
 import moya.util.fastapi_ratelimit as fastapi_ratelimit
-from moya.util.fastapi_ratelimit import (  # , MemLimiter
+from moya.util.fastapi_ratelimit import (
     RateLimit,
     RateLimiter,
     RateLimiterDep,
+    _RateLimiter,
     reset_all_ratelimiters_for_user,
 )
 from moya.util.ratelimit import MemLimiter, RedisLimiter
@@ -26,7 +28,7 @@ async def ensure_verified(credentials: t.Annotated[HTTPBasicCredentials, Depends
     return None if credentials.username == "admin" else credentials.username
 
 
-async def test_basic_memlimiter(time_machine, no_background_tasks: None) -> None:
+async def test_basic_memlimiter(time_machine: TimeMachineFixture, no_background_tasks: None) -> None:
     with patch.dict(os.environ, {"APP_RATELIMITS": '{"test": {"per_minute": 2, "per_hour": 4}}'}):
         limiter = RateLimiter("test", Depends(ensure_verified), limiter_class=MemLimiter)
         await do_tests(time_machine, limiter)
@@ -37,7 +39,7 @@ async def test_basic_memlimiter(time_machine, no_background_tasks: None) -> None
 
 
 @pytest.mark.skipif("SENTINEL_HOSTS" not in os.environ, reason="SENTINEL_HOSTS not specified")
-async def test_redis_limiter(time_machine, no_background_tasks: None) -> None:
+async def test_redis_limiter(time_machine: TimeMachineFixture, no_background_tasks: None) -> None:
     with patch.dict(
         os.environ,
         {
@@ -59,7 +61,7 @@ async def test_empty_limits(no_background_tasks: None) -> None:
         app = FastAPI()
 
         @app.get("/{id}", dependencies=[RateLimiterDep("test", Depends(ensure_verified), limiter_class=MemLimiter)])
-        async def root():
+        async def root() -> dict[str, str]:
             return {"message": "Hello World"}
 
         tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
@@ -81,7 +83,7 @@ async def test_env_pickups_named(no_background_tasks: None) -> None:
             "/{id}",
             dependencies=[RateLimiterDep("foo", Depends(ensure_verified), default_limits=RateLimit(per_second=1), limiter_class=MemLimiter)],
         )
-        async def root():
+        async def root() -> dict[str, str]:
             return {"message": "Hello World"}
 
         tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
@@ -97,7 +99,7 @@ async def test_env_pickups_default(no_background_tasks: None) -> None:
 
         # If default should work correctly
         @app.get("/{id}", dependencies=[RateLimiterDep("foo", Depends(ensure_verified), limiter_class=MemLimiter)])
-        async def root():
+        async def root() -> dict[str, str]:
             return {"message": "Hello World"}
 
         tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")
@@ -107,7 +109,7 @@ async def test_env_pickups_default(no_background_tasks: None) -> None:
         assert res.status_code == 429, "Second request should be blocked"
 
 
-async def do_tests(time_machine, limiter) -> None:
+async def do_tests(time_machine: TimeMachineFixture, limiter: _RateLimiter) -> None:
     """
     General full test for a limiter
     """
@@ -115,7 +117,7 @@ async def do_tests(time_machine, limiter) -> None:
     app = FastAPI()
 
     @app.get("/{id}", dependencies=[limiter.dependency])
-    async def root():
+    async def root() -> dict[str, str]:
         return {"message": "Hello World"}
 
     tester = AsyncClient(transport=ASGITransport(app), base_url="http://test")

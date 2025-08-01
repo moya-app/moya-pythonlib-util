@@ -113,12 +113,6 @@ disallow_any_unimported = true # Show warning when missing type hints cause an i
 warn_unreachable = true        # Warn on unreachable code
 enable_error_code = "redundant-expr" # Warn on redundant expressions
 
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-# Allow some laziness in the tests
-disallow_untyped_defs = false
-disallow_any_generics = false
-
 [tool.poe.tasks]
 test = "pytest . --cov=moya --cov-report=term"
 "lint:ruff-check" = "ruff check"

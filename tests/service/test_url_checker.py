@@ -3,7 +3,7 @@ import pytest
 from moya.service.url_checker import check_forbidden_url
 
 
-async def test_check_forbidden_url():
+async def test_check_forbidden_url() -> None:
     # Test some things that should work
     await check_forbidden_url("http://google.com/foo.jpg")  # Valid URL
     await check_forbidden_url("http://oesrucdoau/foo.jpg")  # Invalid URL
