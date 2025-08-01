@@ -1,8 +1,9 @@
 import asyncio
 import random
 import time
+import typing as t
 
-import pytest
+from _pytest.logging import LogCaptureFixture
 
 from moya.util.asyncpool import asyncpool, asyncpool_queue
 
@@ -10,9 +11,9 @@ from moya.util.asyncpool import asyncpool, asyncpool_queue
 async def test_basic_asyncpool() -> None:
     items: list[int] = []
 
-    total_sleep = 0
+    total_sleep = 0.0
 
-    async def worker(item):
+    async def worker(item: int) -> None:
         nonlocal total_sleep
         to_sleep = random.random() / 10
         total_sleep += to_sleep
@@ -31,7 +32,7 @@ async def test_basic_asyncpool() -> None:
     assert sorted(items) == [i * i for i in range(100)]
 
     # Test with asyncpool now
-    total_sleep = 0
+    total_sleep = 0.0
     items = []
     start = time.time()
     async with asyncpool(worker, worker_count=10) as enqueue:
@@ -44,14 +45,14 @@ async def test_basic_asyncpool() -> None:
     assert sorted(items) == [i * i for i in range(100)]
 
 
-async def test_asyncpool_errors(caplog: pytest.LogCaptureFixture) -> None:
+async def test_asyncpool_errors(caplog: LogCaptureFixture) -> None:
     items: list[float] = []
 
-    async def worker(item):
+    async def worker(item: float) -> None:
         items.append(10.0 / item)
 
     # Pop some nulls into the queue to blow it up at various points
-    to_push = list(range(100)) + [0] * 5
+    to_push: list[t.Any] = list(range(100)) + [0] * 5
     random.shuffle(to_push)
     async with asyncpool(worker, worker_count=10) as enqueue:
         for i in to_push:

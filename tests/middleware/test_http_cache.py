@@ -6,6 +6,7 @@ import httpx
 import pytest
 from fastapi import FastAPI, Request, Response
 from pydantic import BaseModel
+from time_machine import TimeMachineFixture
 
 from moya.middleware.http_cache import IfModifiedSinceMiddleware, set_cache_headers
 
@@ -112,7 +113,7 @@ async def test_if_modified_middleware() -> None:
         assert response.text == ""
 
 
-async def test_expires(time_machine) -> None:
+async def test_expires(time_machine: TimeMachineFixture) -> None:
     time_machine.move_to("2021-01-01 00:00:00")
     app = FastAPI()
     client = httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test")

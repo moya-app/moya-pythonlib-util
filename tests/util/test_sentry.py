@@ -1,10 +1,10 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from moya.util.sentry import SentrySettings, init
 
 
 @patch("sentry_sdk.init")
-def test_sentry_init_with_dsn(mock_sentry_init):
+def test_sentry_init_with_dsn(mock_sentry_init: Mock) -> None:
     """Test that Sentry is initialized when a DSN is provided."""
     with patch("moya.util.sentry.sentry_settings", SentrySettings(sentry_dsn="https://test.com")):
         init()
@@ -12,7 +12,7 @@ def test_sentry_init_with_dsn(mock_sentry_init):
 
 
 @patch("sentry_sdk.init")
-def test_sentry_init_without_dsn(mock_sentry_init):
+def test_sentry_init_without_dsn(mock_sentry_init: Mock) -> None:
     """Test that Sentry is not initialized when a DSN is not provided."""
     with patch("moya.util.sentry.sentry_settings", SentrySettings(sentry_dsn=None)):
         init()
@@ -20,7 +20,7 @@ def test_sentry_init_without_dsn(mock_sentry_init):
 
 
 @patch("sentry_sdk.init")
-def test_sentry_before_send_ignores_exception(mock_sentry_init):
+def test_sentry_before_send_ignores_exception(mock_sentry_init: Mock) -> None:
     """Test that the before_send function ignores specified exceptions."""
     with patch("moya.util.sentry.sentry_settings", SentrySettings(sentry_dsn="https://test.com")):
         init(ignore_exceptions=[ValueError])
@@ -31,7 +31,7 @@ def test_sentry_before_send_ignores_exception(mock_sentry_init):
 
 
 @patch("sentry_sdk.init")
-def test_sentry_before_send_does_not_ignore_exception(mock_sentry_init):
+def test_sentry_before_send_does_not_ignore_exception(mock_sentry_init: Mock) -> None:
     """Test that the before_send function does not ignore other exceptions."""
     with patch("moya.util.sentry.sentry_settings", SentrySettings(sentry_dsn="https://test.com")):
         init(ignore_exceptions=[TypeError])
@@ -42,11 +42,11 @@ def test_sentry_before_send_does_not_ignore_exception(mock_sentry_init):
 
 
 @patch("sentry_sdk.init")
-def test_sentry_before_send_no_exc_info(mock_sentry_init):
+def test_sentry_before_send_no_exc_info(mock_sentry_init: Mock) -> None:
     """Test that the before_send function handles cases with no exc_info."""
     with patch("moya.util.sentry.sentry_settings", SentrySettings(sentry_dsn="https://test.com")):
         init()
         before_send = mock_sentry_init.call_args.kwargs["before_send"]
         event = {"key": "value"}
-        hint = {}
+        hint: dict[str, str] = {}
         assert before_send(event, hint) == event

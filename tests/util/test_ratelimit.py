@@ -6,12 +6,12 @@ from moya.util.ratelimit import MemLimiter, RateLimit, RateLimitExceeded
 
 
 @pytest.fixture
-def limiter():
+def limiter() -> MemLimiter:
     return MemLimiter(rates=RateLimit(per_second=2, per_minute=5), base_key="test")
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_allows_requests_under_limit(limiter: MemLimiter):
+async def test_mem_limiter_allows_requests_under_limit(limiter: MemLimiter) -> None:
     """Test that requests are allowed when they are under the rate limit."""
     await limiter.try_ratelimit("user1")
     await limiter.try_ratelimit("user1")
@@ -19,7 +19,7 @@ async def test_mem_limiter_allows_requests_under_limit(limiter: MemLimiter):
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_exceeds_per_second_limit(limiter: MemLimiter):
+async def test_mem_limiter_exceeds_per_second_limit(limiter: MemLimiter) -> None:
     """Test that the per-second rate limit is enforced."""
     await limiter.try_ratelimit("user1")
     await limiter.try_ratelimit("user1")
@@ -28,7 +28,7 @@ async def test_mem_limiter_exceeds_per_second_limit(limiter: MemLimiter):
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_exceeds_per_minute_limit(limiter: MemLimiter):
+async def test_mem_limiter_exceeds_per_minute_limit(limiter: MemLimiter) -> None:
     """Test that the per-minute rate limit is enforced."""
     for i in range(5):
         # Ensure we don't hit the per-second limit
@@ -41,7 +41,7 @@ async def test_mem_limiter_exceeds_per_minute_limit(limiter: MemLimiter):
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_resets_after_duration(limiter: MemLimiter):
+async def test_mem_limiter_resets_after_duration(limiter: MemLimiter) -> None:
     """Test that the rate limit resets after the duration has passed."""
     await limiter.try_ratelimit("user1")
     await limiter.try_ratelimit("user1")
@@ -56,7 +56,7 @@ async def test_mem_limiter_resets_after_duration(limiter: MemLimiter):
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_flush_user(limiter: MemLimiter):
+async def test_mem_limiter_flush_user(limiter: MemLimiter) -> None:
     """Test that a user's rate limit can be flushed."""
     await limiter.try_ratelimit("user1")
     await limiter.try_ratelimit("user1")
@@ -70,7 +70,7 @@ async def test_mem_limiter_flush_user(limiter: MemLimiter):
 
 
 @pytest.mark.asyncio
-async def test_mem_limiter_reset(limiter: MemLimiter):
+async def test_mem_limiter_reset(limiter: MemLimiter) -> None:
     """Test that the entire limiter can be reset."""
     await limiter.try_ratelimit("user1")
     await limiter.try_ratelimit("user2")
@@ -82,7 +82,7 @@ async def test_mem_limiter_reset(limiter: MemLimiter):
     # No exceptions should be raised
 
 
-def test_rate_limit_model():
+def test_rate_limit_model() -> None:
     """Test the RateLimit model."""
     rate_limit = RateLimit(per_second=1, per_minute=60)
     assert rate_limit.rates == [(1, 1), (60, 60)]
@@ -90,7 +90,7 @@ def test_rate_limit_model():
     assert not rate_limit.is_empty
 
 
-def test_rate_limit_model_is_empty():
+def test_rate_limit_model_is_empty() -> None:
     """Test that the RateLimit model is empty when no rates are set."""
     rate_limit = RateLimit()
     assert rate_limit.is_empty
