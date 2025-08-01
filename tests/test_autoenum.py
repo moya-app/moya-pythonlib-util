@@ -9,4 +9,4 @@ def test_autoname() -> None:
         bar = enum.auto()
 
     assert Test.FOO == "FOO"
-    assert Test.bar == "bar"  # type: ignore
+    assert Test.bar == "bar"  # type: ignore[unreachable]
