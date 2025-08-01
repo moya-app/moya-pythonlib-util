@@ -9,12 +9,12 @@ from moya.util.background_tasks import repeat_every
 
 
 @pytest.fixture
-def mock_ensure_future() -> t.Generator[t.Tuple[Mock, t.List[asyncio.Task]], None, None]:
+def mock_ensure_future() -> t.Generator[tuple[Mock, list[asyncio.Task[None]]], None, None]:
     """A fixture to patch asyncio.ensure_future and capture the created task."""
-    created_tasks = []
+    created_tasks: list[asyncio.Task[None]] = []
 
-    def side_effect(coro) -> asyncio.Task:
-        task = asyncio.Task(coro)
+    def side_effect(coro: t.Any) -> asyncio.Task[None]:
+        task: asyncio.Task[None] = asyncio.Task(coro)
         created_tasks.append(task)
         return task
 
@@ -23,7 +23,7 @@ def mock_ensure_future() -> t.Generator[t.Tuple[Mock, t.List[asyncio.Task]], Non
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_async_function(mock_ensure_future) -> None:
+async def test_repeat_every_async_function(mock_ensure_future: t.Any) -> None:
     """Test that an async function is repeatedly called."""
     mock_func = Mock()
     _, created_tasks = mock_ensure_future
@@ -40,7 +40,7 @@ async def test_repeat_every_async_function(mock_ensure_future) -> None:
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_sync_function(mock_ensure_future) -> None:
+async def test_repeat_every_sync_function(mock_ensure_future: t.Any) -> None:
     """Test that a sync function is repeatedly called."""
     mock_func = Mock()
     _, created_tasks = mock_ensure_future
@@ -57,7 +57,7 @@ async def test_repeat_every_sync_function(mock_ensure_future) -> None:
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_wait_first(mock_ensure_future) -> None:
+async def test_repeat_every_wait_first(mock_ensure_future: t.Any) -> None:
     """Test that the first call is delayed when wait_first is True."""
     mock_func = Mock()
     _, created_tasks = mock_ensure_future
@@ -75,7 +75,7 @@ async def test_repeat_every_wait_first(mock_ensure_future) -> None:
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_max_repetitions(mock_ensure_future) -> None:
+async def test_repeat_every_max_repetitions(mock_ensure_future: t.Any) -> None:
     """Test that the function stops after max_repetitions."""
     mock_func = Mock()
     _, created_tasks = mock_ensure_future
@@ -91,7 +91,7 @@ async def test_repeat_every_max_repetitions(mock_ensure_future) -> None:
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_logs_exception(mock_ensure_future) -> None:
+async def test_repeat_every_logs_exception(mock_ensure_future: t.Any) -> None:
     """Test that exceptions are logged."""
     mock_logger = Mock(spec=logging.Logger)
     mock_func = Mock(side_effect=ValueError("test error"))
@@ -110,7 +110,7 @@ async def test_repeat_every_logs_exception(mock_ensure_future) -> None:
 
 
 @pytest.mark.asyncio
-async def test_repeat_every_raise_exceptions(mock_ensure_future) -> None:
+async def test_repeat_every_raise_exceptions(mock_ensure_future: t.Any) -> None:
     """Test that exceptions are raised and the loop stops."""
     mock_func = Mock(side_effect=ValueError("test error"))
     _, created_tasks = mock_ensure_future

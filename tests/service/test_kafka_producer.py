@@ -10,7 +10,7 @@ import pytest
 import moya.service.kafka_producer as kafka_producer
 
 
-def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
+def get_test_settings(**kwargs: t.Any) -> kafka_producer.KafkaSettings:
     return kafka_producer.KafkaSettings(
         **{
             "kafka_sasl_mechanism": "PLAIN",
@@ -24,7 +24,7 @@ def get_test_settings(**kwargs) -> kafka_producer.KafkaSettings:
 
 
 @patch("asyncio.sleep")  # disable actually sleeping
-async def test_kafka_bad_connection(mock_sleep, no_background_tasks: None) -> None:
+async def test_kafka_bad_connection(mock_sleep: Mock, no_background_tasks: None) -> None:
     k = kafka_producer.KafkaProducer(get_test_settings())
     with pytest.raises(Exception, match="Kafka producer not started"):
         await k.send("test", {"test": "test"})
@@ -47,8 +47,8 @@ async def test_kafka_bad_connection(mock_sleep, no_background_tasks: None) -> No
 
 @contextmanager
 def patch_kafka_send() -> t.Iterator[Mock]:
-    async def mock_send() -> asyncio.Future:
-        fut = asyncio.get_running_loop().create_future()
+    async def mock_send(*args: t.Any, **kwargs: t.Any) -> asyncio.Future[t.Any]:
+        fut: asyncio.Future[t.Any] = asyncio.get_running_loop().create_future()
         fut.set_result({})  # should be aiokafka.RecordMetadata
         return fut
 

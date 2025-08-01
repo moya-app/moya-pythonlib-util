@@ -19,7 +19,7 @@ async def test_inbound_gzip(subtests: t.Any) -> None:
     router = APIRouter(prefix="", route_class=GzipRoute)
 
     @router.post("/test")
-    async def body_test(request: Request) -> dict:
+    async def body_test(request: Request) -> dict[str, t.Any]:
         return {"body": await request.body()}
 
     class TestReq(BaseModel):
@@ -27,7 +27,7 @@ async def test_inbound_gzip(subtests: t.Any) -> None:
         foo: int
 
     @router.post("/test_json")
-    async def json_test(detail: TestReq) -> dict:
+    async def json_test(detail: TestReq) -> dict[str, t.Any]:
         return detail.model_dump()
 
     app.include_router(router)
@@ -65,7 +65,7 @@ async def test_inbound_brotli(subtests: t.Any) -> None:
     router = APIRouter(prefix="", route_class=GzipRoute)
 
     @router.post("/test")
-    async def body_test(request: Request) -> dict:
+    async def body_test(request: Request) -> dict[str, t.Any]:
         return {"body": await request.body()}
 
     class TestReq(BaseModel):
@@ -73,7 +73,7 @@ async def test_inbound_brotli(subtests: t.Any) -> None:
         foo: int
 
     @router.post("/test_json")
-    async def json_test(detail: TestReq) -> dict:
+    async def json_test(detail: TestReq) -> dict[str, t.Any]:
         return detail.model_dump()
 
     app.include_router(router)

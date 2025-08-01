@@ -15,7 +15,7 @@ from moya.middleware.connection_stats import (
 
 
 @contextmanager
-def patch_trace() -> t.Iterator[t.Dict[str, t.Any]]:
+def patch_trace() -> t.Iterator[dict[str, t.Any]]:
     called: dict[str, t.Any] = {}
 
     def record(key: str, value: t.Any) -> None:
@@ -95,5 +95,5 @@ async def test_fastapi() -> None:
         ("blah foo Moya-IOS/7.2.3.5 (fred)", ("ios", "7.2.3.5")),
     ],
 )
-def test_extract_moya_details(user_agent, expected):
+def test_extract_moya_details(user_agent: str, expected: tuple[str, str] | None) -> None:
     assert extract_moya_details(user_agent) == expected

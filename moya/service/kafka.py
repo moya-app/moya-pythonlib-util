@@ -22,7 +22,7 @@ class KafkaSettings(MoyaSettings):
     kafka_security_protocol: str = "SASL_SSL"
     kafka_username: str
     kafka_password: str
-    kafka_brokers: str
+    kafka_brokers: str | list[str]
 
     kafka_producer_linger_ms: int = 50  # Block send tasks for up to 50ms to see if it can batch to improve send performance
 
