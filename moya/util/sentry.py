@@ -37,8 +37,11 @@ def init(ignore_exceptions: t.Sequence[t.Type[Exception]] = ()) -> None:
         dsn=sentry_settings.sentry_dsn,
         environment=sentry_settings.environment,
         release=sentry_settings.commit_tag,
-        traces_sample_rate=0,
         before_send=sentry_before_send,
+        # Disable sending traces and profiling data to sentry - we handle these via OTEL traces as sentry is very
+        # expensive.
+        traces_sample_rate=0,
+        profile_session_sample_rate=0,
     )
 
     # try:
