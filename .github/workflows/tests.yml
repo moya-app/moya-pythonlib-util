@@ -40,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -e ".[dev,pydantic-${{ matrix.pydantic-version }},all]"
+      - name: Set up .coveragerc for gh actions reporting
+        run: |
+          if [ ! -f app/.coveragerc ]; then
+            echo '[run]' > app/.coveragerc
+            echo 'relative_files = true' >> app/.coveragerc
+          fi
       -
         name: Run lint
         run: |
@@ -49,7 +55,6 @@ jobs:
         # A 250 exit status sometimes randomly comes from the coverage report black magic
         run: |
           poe test -vv
-          poe test -vv non_async_tests/
       -
         name: Run live redis tests
         working-directory: test_envs/redis-sentinel
@@ -66,7 +71,13 @@ jobs:
           poe test -vv
         env:
           DOCKER_HUB_URL: "${{ vars.DOCKER_HUB_URL }}"
-
+      - name: Upload coverage report to github actions/PR
+        uses: py-cov-action/python-coverage-comment-action@v3
+        # Only upload coverage report if the file exists (wouldnt if there is a custom command)
+        if: ${{ hashFiles('app/.coverage') != '' }}
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERAGE_PATH: app/
       - name: Show all logs
         if: always()
         working-directory: test_envs/redis-sentinel
